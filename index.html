@@ -92,6 +92,7 @@ img.cover{box-shadow:none;border:1px solid rgba(28,33,30,.18)}
 #mini .cover svg{width:24px;height:24px}
 #mini .txt{flex:1;min-width:0}
 #mini .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mStat{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;margin-right:10px}
 #mini .track{height:7px;margin:7px 0 5px}
 .round{
   flex:none;border-radius:50%;border:2px solid var(--ink);background:none;color:var(--ink);
@@ -115,6 +116,8 @@ img.cover{box-shadow:none;border:1px solid rgba(28,33,30,.18)}
 #np span.cover{box-shadow:inset 0 0 0 1px rgba(28,33,30,.18)}
 #np span.cover svg{width:34%;height:34%}
 #np .name{font-size:24px;font-weight:700;line-height:1.15;word-break:break-word}
+#np .song{font-size:17px;font-weight:600;line-height:1.3;margin-top:8px;max-width:520px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#np .song:empty{display:none}
 #np .place{font-size:16px;font-weight:500;color:var(--mute);margin-top:6px}
 #np .qual{font-size:13px;font-weight:600;color:var(--mute);margin-top:4px;letter-spacing:.02em}
 #np .bar{width:100%;margin-top:auto;padding-top:22px}
@@ -143,7 +146,7 @@ img.cover{box-shadow:none;border:1px solid rgba(28,33,30,.18)}
     column-gap:28px;text-align:left;align-items:center;
     padding:12px max(24px,env(safe-area-inset-right)) 12px max(24px,env(safe-area-inset-left));
   }
-  #nCover{grid-column:1;grid-row:1 / span 7;margin:0}
+  #nCover{grid-column:1;grid-row:1 / span 9;margin:0}
   #np .cover{width:min(62vh,260px);height:min(62vh,260px)}
   #np > :not(#nCover){grid-column:2}
   #np .bar{margin-top:0;padding-top:14px}
@@ -201,6 +204,7 @@ img.cover{box-shadow:none;border:1px solid rgba(28,33,30,.18)}
     <div class="count" id="nCount"></div>
     <span id="nCover"></span>
     <div class="name" id="nName"></div>
+    <div class="song" id="nSong"></div>
     <div class="place" id="nPlace"></div>
     <div class="qual" id="nQual"></div>
     <div class="bar" id="nBar">
@@ -265,9 +269,12 @@ async function loadRadios() {
     if (!res.ok) throw new Error(res.status);
     const j = await res.json();
     radios = (Array.isArray(j) ? j : j.radios || []).filter(r => r && r.url);
+    META = (!Array.isArray(j) && typeof j.meta === 'string') ? j.meta.trim() : '';
+    try { localStorage.setItem(CACHE_KEY + '.meta', META); } catch (e) {}
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(radios)); } catch (e) {}
   } catch (e) {
     try { radios = JSON.parse(localStorage.getItem(CACHE_KEY)) || []; } catch (e2) { radios = []; }
+    try { META = localStorage.getItem(CACHE_KEY + '.meta') || ''; } catch (e3) {}
   }
   // garder la radio en cours à jour si elle a été modifiée dans le back office
   if (P.r) { const u = radios.find(r => r.url === P.r.url); if (u) P.r = u; }
@@ -299,7 +306,10 @@ const LABEL = {
   loading: 'Connexion…', playing: 'En direct', paused: 'En pause',
   reconnecting: 'Reconnexion…', offline: 'Hors réseau · en attente', error: 'Flux indisponible',
 };
-const label = s => s === 'reconnecting' && P.retry > 1 ? `Reconnexion… (essai ${P.retry})` : (LABEL[s] || '');
+const label = s => s === 'reconnecting' && P.retry > 1 ? `Reconnexion… (essai ${P.retry})`
+  : s === 'error' && P.errMsg ? P.errMsg : (LABEL[s] || '');
+/* Cause de la dernière coupure, affichée sous les commandes pour comprendre ce qui se passe */
+const CAUSE = { 1: 'lecture interrompue', 2: 'erreur réseau', 3: 'flux illisible (décodage)', 4: 'flux refusé par le serveur ou format non pris en charge', timeout: 'le son ne démarre pas', stall: 'le son s’est figé', ended: 'le serveur a coupé le flux', play: 'lecture refusée' };
 const isOn = () => P.want;
 const isBusy = s => s === 'loading' || s === 'reconnecting';
 
@@ -312,7 +322,7 @@ function setState(s) {
 function clearTimers() { clearTimeout(P.t); clearTimeout(P.dog); P.t = P.dog = null; }
 function watch(ms) {                 // arme le chien de garde
   clearTimeout(P.dog);
-  P.dog = setTimeout(() => { if (P.want && P.state !== 'playing') reconnect(); }, ms);
+  P.dog = setTimeout(() => { if (P.want && P.state !== 'playing') { P.lastErr = 'timeout'; reconnect(); } }, ms);
 }
 
 function load() {                    // (re)charge le flux depuis le direct
@@ -322,24 +332,71 @@ function load() {                    // (re)charge le flux depuis le direct
   if (pr) pr.catch(err => {
     if (!err || err.name === 'AbortError') return;
     if (err.name === 'NotAllowedError') { P.want = false; clearTimers(); setState('paused'); return; }
+    if (err.name === 'NotSupportedError' && !P.played && navigator.onLine !== false) {
+      P.lastErr = 4;
+      if (++P.refused >= 3) { refuse(); return; }
+    } else P.lastErr = 'play';
     reconnect();
   });
-  watch(START_TIMEOUT);
+  watch(P.played ? START_TIMEOUT : START_TIMEOUT + 8000);   // plus de patience au tout premier démarrage
 }
 function play(r) {
   if (!P.r || P.r.url !== r.url) { P.base = 0; P.since = 0; }
-  P.r = r; P.want = true; P.retry = 0; P.failSince = 0;
+  if (!P.r || P.r.url !== r.url) P.played = false;
+  P.r = r; P.want = true; P.retry = 0; P.failSince = 0; P.lastErr = null; P.errMsg = ''; P.refused = 0;
   clearTimers();
   setState('loading');
+  if (T.for !== r.url) resetTrack(r.url);
   load();
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: r.name, artist: place(r) || 'Radio', album: 'Ondes',
-      artwork: r.logo
-        ? [{ src: absUrl(r.logo), sizes: '300x300', type: 'image/jpeg' }]
-        : [{ src: absUrl('icon-512.png'), sizes: '512x512', type: 'image/png' }],
+  setMeta();
+}
+
+/* ---------- Titre en cours (via le relais déclaré dans radios.json) ---------- */
+let META = '';
+const T = { title: '', artist: '', song: '', for: '', timer: null, fails: 0, busy: false };
+function resetTrack(url) {
+  clearTimeout(T.timer); T.timer = null;
+  T.title = T.artist = T.song = ''; T.for = url || ''; T.fails = 0;
+}
+function pollTrack() {
+  clearTimeout(T.timer); T.timer = null;
+  const r = P.r;
+  if (!META || !r || !P.want || r.meta === false || T.busy) return;
+  const url = r.url;
+  T.busy = true;
+  fetch(META + (META.includes('?') ? '&' : '?') + 'url=' + encodeURIComponent(url), { cache: 'no-store' })
+    .then(res => res.ok ? res.json() : null)
+    .then(j => {
+      if (!P.r || P.r.url !== url) return;
+      const t = (j && j.title) || '';
+      T.fails = j ? 0 : T.fails + 1;
+      // on ignore un « titre » qui n'est que le nom de la radio
+      const useful = t && t.toLowerCase() !== P.r.name.toLowerCase();
+      const next = useful ? t : '';
+      if (next !== T.title) {
+        T.title = next;
+        T.artist = useful ? (j.artist || '') : '';
+        T.song = useful ? (j.song || t) : '';
+        paint(); setMeta();
+      }
+    })
+    .catch(() => { T.fails++; })
+    .finally(() => {
+      T.busy = false;
+      if (P.want && P.r && P.r.url === url) T.timer = setTimeout(pollTrack, T.fails > 3 ? 60000 : 20000);
     });
-  }
+}
+function setMeta() {
+  const r = P.r;
+  if (!('mediaSession' in navigator) || !r) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: T.song || r.name,
+    artist: T.song ? (T.artist || r.name) : (place(r) || 'Radio'),
+    album: T.song ? r.name : 'Ondes',
+    artwork: r.logo
+      ? [{ src: absUrl(r.logo), sizes: '300x300', type: /\.png$/i.test(r.logo) ? 'image/png' : 'image/jpeg' }]
+      : [{ src: absUrl('icon-512.png'), sizes: '512x512', type: 'image/png' }],
+  });
 }
 function reconnect(now) {
   if (!P.want || !P.r) return;
@@ -360,6 +417,11 @@ function reconnect(now) {
   const delay = now ? 0 : Math.min(MAX_DELAY, 2000 * 2 ** (P.retry - 1));
   P.t = setTimeout(() => { P.t = null; if (P.want) load(); }, delay);
 }
+function refuse() {
+  P.want = false; clearTimers(); silence();
+  P.errMsg = 'Flux refusé ou illisible';
+  setState('error');
+}
 function silence() {                 // coupe le téléchargement sans changer l'intention
   P.reloadAt = Date.now();
   audio.pause();
@@ -370,6 +432,7 @@ function stop() {
   if (!P.r) return;
   P.want = false;
   clearTimers();
+  clearTimeout(T.timer); T.timer = null;
   silence();
   setState('paused');
 }
@@ -384,9 +447,11 @@ function step(d) {
 audio.addEventListener('playing', () => {
   if (!P.want) return;
   clearTimers();
-  P.retry = 0; P.failSince = 0;
+  P.retry = 0; P.failSince = 0; P.played = true; P.lastErr = null;
   P.lastPos = audio.currentTime; P.lastMove = Date.now();
   setState('playing');
+  setMeta();                         // iOS oublie parfois les infos après un rechargement du flux
+  if (!T.timer && !T.busy) pollTrack();
 });
 audio.addEventListener('timeupdate', () => {
   if (audio.currentTime !== P.lastPos) { P.lastPos = audio.currentTime; P.lastMove = Date.now(); }
@@ -400,11 +465,16 @@ audio.addEventListener('pause', () => {
   stop();
 });
 ['error', 'ended'].forEach(ev => audio.addEventListener(ev, () => {
-  if (P.want && audio.getAttribute('src') && Date.now() - P.reloadAt > 300) reconnect();
+  if (!P.want || !audio.getAttribute('src') || Date.now() - P.reloadAt <= 300) return;
+  const code = ev === 'error' && audio.error ? audio.error.code : 'ended';
+  P.lastErr = code;
+  // Flux refusé ou format illisible dès le départ : 3 essais, puis on arrête au lieu de boucler
+  if (code === 4 && !P.played && navigator.onLine !== false && ++P.refused >= 3) { refuse(); return; }
+  reconnect();
 }));
 // Son figé sans aucun événement (cas fréquent en passant du wifi à la 4G)
 setInterval(() => {
-  if (P.want && P.state === 'playing' && !audio.paused && Date.now() - P.lastMove > STALL_TIMEOUT) reconnect(true);
+  if (P.want && P.state === 'playing' && !audio.paused && Date.now() - P.lastMove > STALL_TIMEOUT) { P.lastErr = 'stall'; reconnect(true); }
 }, 2000);
 window.addEventListener('online', () => { if (P.want && P.state !== 'playing') { P.retry = Math.max(0, P.retry - 1); reconnect(true); } });
 window.addEventListener('offline', () => { if (P.want && P.state !== 'playing') setState('offline'); });
@@ -524,7 +594,7 @@ function paint() {
   if (r) {
     setCover($('mCover'), r.logo);
     $('mName').textContent = r.name;
-    $('mStat').textContent = label(s);
+    $('mStat').textContent = s === 'playing' && T.title ? (T.artist ? T.artist + ' – ' + T.song : T.song) : label(s);
     mToggle.innerHTML = on ? ICON.pause : ICON.play;
     mToggle.setAttribute('aria-label', on ? 'Pause' : 'Lecture');
   }
@@ -534,6 +604,7 @@ function paint() {
     $('nCount').textContent = i >= 0 ? `${i + 1} sur ${radios.length}` : '';
     setCover($('nCover'), r.logo);
     $('nName').textContent = r.name;
+    $('nSong').textContent = T.title ? (T.artist ? T.artist + ' – ' + T.song : T.song) : '';
     $('nPlace').textContent = place(r);
     $('nQual').textContent = quality(r);
     $('nBar').className = 'bar ' + s;
@@ -542,7 +613,9 @@ function paint() {
     nToggle.setAttribute('aria-label', on ? 'Pause' : 'Lecture');
     nPrev.disabled = nNext.disabled = radios.length < 2;
     $('nNote').textContent = s === 'error' && /^http:/i.test(r.url) && location.protocol === 'https:'
-      ? 'Ce flux est en http : le navigateur peut le bloquer sur une page https.' : '';
+      ? 'Ce flux est en http : le navigateur peut le bloquer sur une page https.'
+      : (s === 'reconnecting' || s === 'error') && P.lastErr != null && CAUSE[P.lastErr]
+        ? 'Cause : ' + CAUSE[P.lastErr] + (typeof P.lastErr === 'number' ? ` (code ${P.lastErr})` : '') : '';
   }
   tick();
   if ('mediaSession' in navigator) navigator.mediaSession.playbackState = on ? 'playing' : (r ? 'paused' : 'none');
