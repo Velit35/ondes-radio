@@ -1,6 +1,6 @@
 // Ondes Radio — met l'app en cache pour qu'elle s'ouvre même avec un réseau faible.
 // Les flux audio et la liste des radios ne passent jamais par le cache.
-const CACHE = 'ondes-radio-v7';
+const CACHE = 'ondes-radio-v8';
 const SHELL = [
   './',
   './index.html',
