@@ -148,13 +148,13 @@
       "city": "Lille",
       "logo": "logos/comala-radio.jpg"
     },
-    {
-      "name": "Mad Radio",
-      "url": "https://c2.radioboss.fm/stream/588",
-      "country": "Spain",
-      "city": "Barcelona",
-      "logo": "logos/mad-radio.jpg"
-    },
+  {
+  "name": "Mad Radio",
+  "url": "https://c2.radioboss.fm:8588/stream",
+  "country": "USA",
+  "city": "New-York",
+  "logo": "logos/mad-radio.jpg"
+},
     {
       "name": "Rotation Radio",
       "url": "https://rotation-radio-befbc736.radiocult.fm/stream",
