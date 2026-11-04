@@ -5,8 +5,6 @@
       "url": "https://icecast.radiofrance.fr/fip-hifi.aac",
       "country": "France",
       "city": "Paris",
-      "codec": "AAC",
-      "bitrate": 192,
       "logo": "logos/fip.jpg"
     },
     {
@@ -14,8 +12,6 @@
       "url": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
       "country": "France",
       "city": "Paris",
-      "codec": "AAC",
-      "bitrate": 192,
       "logo": "logos/fip-jazz.jpg"
     },
     {
@@ -23,8 +19,6 @@
       "url": "https://stream-relay-geo.ntslive.net/stream?client=direct",
       "country": "UK",
       "city": "London",
-      "codec": "MP3",
-      "bitrate": 256,
       "logo": "logos/nts-radio-channel-1.jpg"
     },
     {
@@ -32,8 +26,6 @@
       "url": "https://stream-relay-geo.ntslive.net/stream2?client=direct",
       "country": "UK",
       "city": "London",
-      "codec": "MP3",
-      "bitrate": 256,
       "logo": "logos/nts-radio-channel-2.jpg"
     },
     {
@@ -41,8 +33,6 @@
       "url": "https://radiomeuh.ice.infomaniak.ch/radiomeuh-128.mp3",
       "country": "France",
       "city": "La Clusaz",
-      "codec": "MP3",
-      "bitrate": 128,
       "logo": "logos/radio-meuh.jpg"
     },
     {
@@ -50,8 +40,6 @@
       "url": "https://streaming.radio.co/s3699c5e49/listen",
       "country": "Germany",
       "city": "Berlin",
-      "codec": "MP3",
-      "bitrate": 192,
       "logo": "logos/refuge-worldwide.jpg"
     },
     {
@@ -59,8 +47,6 @@
       "url": "https://admin.stream.rinse.fm/proxy/rinse_uk/stream",
       "country": "UK",
       "city": "London",
-      "codec": "AAC",
-      "bitrate": 128,
       "logo": "logos/rinse-uk.jpg"
     },
     {
@@ -68,8 +54,6 @@
       "url": "https://worldwide-fm.radiocult.fm/stream",
       "country": "UK",
       "city": "London",
-      "codec": "MP3",
-      "bitrate": 320,
       "logo": "logos/worldwide-fm.jpg"
     },
     {
@@ -77,8 +61,6 @@
       "url": "https://kioskradiobxl.out.airtime.pro/kioskradiobxl_b",
       "country": "Belgium",
       "city": "Brussels",
-      "codec": "AAC",
-      "bitrate": 192,
       "logo": "logos/kiosk-radio.jpg"
     },
     {
@@ -86,8 +68,6 @@
       "url": "https://noods-radio.radiocult.fm/stream",
       "country": "UK",
       "city": "Bristol",
-      "codec": "MP3",
-      "bitrate": 192,
       "logo": "logos/noods-radio.jpg"
     },
     {
@@ -95,8 +75,6 @@
       "url": "https://dublab.out.airtime.pro/dublab_a",
       "country": "USA",
       "city": "Los Angeles",
-      "codec": "MP3",
-      "bitrate": 192,
       "logo": "logos/dublab.jpg"
     },
     {
@@ -104,8 +82,6 @@
       "url": "https://sohoradiomusic.doughunt.co.uk:8010/320mp3",
       "country": "Uk",
       "city": "London",
-      "codec": "MP3",
-      "bitrate": 320,
       "logo": "logos/soho-radio.jpg"
     },
     {
@@ -113,8 +89,6 @@
       "url": "https://movementathens.out.airtime.pro/movementathens_a",
       "country": "Greece",
       "city": "Athens",
-      "codec": "AAC",
-      "bitrate": 192,
       "logo": "logos/movement-radio.jpg"
     },
     {
@@ -122,8 +96,6 @@
       "url": "https://stream0.wfmu.org/freeform-128k.mp3",
       "country": "USA",
       "city": "New Jersey",
-      "codec": "MP3",
-      "bitrate": 128,
       "logo": "logos/wfmu.jpg"
     },
     {
@@ -131,8 +103,6 @@
       "url": "https://cashmereradio.out.airtime.pro/cashmereradio_b",
       "country": "Germany",
       "city": "Berlin",
-      "codec": "MP3",
-      "bitrate": 192,
       "logo": "logos/cashmere-radio.jpg"
     },
     {
@@ -140,8 +110,6 @@
       "url": "https://streamer.radio.co/s0628bdd53/listen",
       "country": "Uk",
       "city": "London",
-      "codec": "MP3",
-      "bitrate": 192,
       "logo": "logos/foundation-radio.jpg"
     },
     {
@@ -149,8 +117,6 @@
       "url": "https://novazz.ice.infomaniak.ch/novazz-128.mp3",
       "country": "France",
       "city": "Paris",
-      "codec": "MP3",
-      "bitrate": 128,
       "logo": "logos/radio-nova.jpg"
     },
     {
@@ -158,8 +124,6 @@
       "url": "https://stream.levillage.org/canalb",
       "country": "France",
       "city": "Rennes",
-      "codec": "MP3",
-      "bitrate": 0,
       "logo": "logos/canal-b.jpg"
     },
     {
@@ -167,8 +131,6 @@
       "url": "https://doyouworld.out.airtime.pro/doyouworld_a",
       "country": "UK",
       "city": "London",
-      "codec": "MP3",
-      "bitrate": 128,
       "logo": "logos/do-you-radio.jpg"
     },
     {
@@ -176,8 +138,6 @@
       "url": "https://silence-radio-4d71dfe5.radiocult.fm/stream",
       "country": "France",
       "city": "Île de la Réunion",
-      "codec": "MP3",
-      "bitrate": 320,
       "logo": "logos/silence-radio.jpg"
     },
     {
@@ -185,8 +145,6 @@
       "url": "https://listen.radioking.com/radio/38120/stream/74519",
       "country": "France",
       "city": "Lille",
-      "codec": "MP3",
-      "bitrate": 192,
       "logo": "logos/comala-radio.jpg"
     },
     {
@@ -194,8 +152,6 @@
       "url": "https://c2.radioboss.fm/stream/588",
       "country": "Spain",
       "city": "Barcelona",
-      "codec": "MP3",
-      "bitrate": 320,
       "logo": "logos/mad-radio.jpg"
     },
     {
@@ -203,8 +159,6 @@
       "url": "https://rotation-radio-befbc736.radiocult.fm/stream",
       "country": "Sueden",
       "city": "Stockholm",
-      "codec": "MP3",
-      "bitrate": 0,
       "logo": "logos/rotation-radio.jpg"
     },
     {
@@ -212,8 +166,6 @@
       "url": "https://radio.calotropis.xyz:8000/radio.mp3",
       "country": "Kenya",
       "city": "Nairobi",
-      "codec": "MP3",
-      "bitrate": 128,
       "logo": "logos/calo.jpg"
     },
     {
@@ -221,8 +173,6 @@
       "url": "https://oroko-radio.radiocult.fm/stream",
       "country": "Ghana",
       "city": "Accra",
-      "codec": "MP3",
-      "bitrate": 0,
       "logo": "logos/oroko-radio.jpg"
     }
   ]
