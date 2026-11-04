@@ -10,8 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Ondes">
 <title>Ondes Radio</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>
 :root{
   --lcd:#e6e9e3; --ink:#1c211e; --mute:#5f6862; --line:#c3c8c0;
@@ -288,7 +288,7 @@ function play(r) {
       title: r.name, artist: place(r) || 'Radio', album: 'Ondes',
       artwork: r.logo
         ? [{ src: absUrl(r.logo), sizes: '300x300', type: 'image/jpeg' }]
-        : [{ src: absUrl('icons/icon-512.png'), sizes: '512x512', type: 'image/png' }],
+        : [{ src: absUrl('icon-512.png'), sizes: '512x512', type: 'image/png' }],
     });
   }
 }

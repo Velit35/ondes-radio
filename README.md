@@ -44,5 +44,5 @@ L'ordre des blocs dans le fichier = l'ordre dans l'app.
 - `index.html` : l'app
 - `radios.json` : la liste des radios
 - `logos/` : les pochettes
-- `manifest.webmanifest`, `sw.js`, `icons/` : installation sur le téléphone
+- `manifest.webmanifest`, `sw.js`, `icon-*.png`, `apple-touch-icon.png` : installation sur le téléphone
 - `CNAME` : le nom de domaine (radio.horolaj.fr)
