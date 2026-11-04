@@ -1,0 +1,40 @@
+{
+  "radios": [
+    {
+      "name": "FIP",
+      "url": "https://icecast.radiofrance.fr/fip-hifi.aac",
+      "country": "France",
+      "city": "Paris",
+      "codec": "AAC",
+      "bitrate": 192,
+      "logo": ""
+    },
+    {
+      "name": "FIP Jazz",
+      "url": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+      "country": "France",
+      "city": "Paris",
+      "codec": "AAC",
+      "bitrate": 192,
+      "logo": ""
+    },
+    {
+      "name": "France Inter",
+      "url": "https://icecast.radiofrance.fr/franceinter-hifi.aac",
+      "country": "France",
+      "city": "Paris",
+      "codec": "AAC",
+      "bitrate": 192,
+      "logo": ""
+    },
+    {
+      "name": "France Culture",
+      "url": "https://icecast.radiofrance.fr/franceculture-hifi.aac",
+      "country": "France",
+      "city": "Paris",
+      "codec": "AAC",
+      "bitrate": 192,
+      "logo": ""
+    }
+  ]
+}
