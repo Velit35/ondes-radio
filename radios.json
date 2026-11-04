@@ -80,7 +80,7 @@
     {
       "name": "Soho Radio",
       "url": "https://sohoradiomusic.doughunt.co.uk:8010/320mp3",
-      "country": "Uk",
+      "country": "UK",
       "city": "London",
       "logo": "logos/soho-radio.jpg"
     },
@@ -108,7 +108,7 @@
     {
       "name": "Foundation FM",
       "url": "https://streamer.radio.co/s0628bdd53/listen",
-      "country": "Uk",
+      "country": "UK",
       "city": "London",
       "logo": "logos/foundation-radio.jpg"
     },
@@ -166,7 +166,7 @@
       "url": "https://radio.calotropis.xyz:8000/radio.mp3",
       "country": "Kenya",
       "city": "Nairobi",
-      "logo": "logos/calo.jpg"
+      "logo": "logos/calo.jpeg"
     },
     {
       "name": "Oroko Radio",
