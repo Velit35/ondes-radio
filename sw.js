@@ -1,6 +1,6 @@
 // Ondes Radio — met l'app en cache pour qu'elle s'ouvre même avec un réseau faible.
 // Les flux audio et la liste des radios ne passent jamais par le cache.
-const CACHE = 'ondes-radio-v10';
+const CACHE = 'ondes-radio-v12';
 const SHELL = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const SHELL = [
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
+  './AzeretMono-SemiBold.otf',
 ];
 
 self.addEventListener('install', e => {

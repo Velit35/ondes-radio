@@ -1,0 +1,7 @@
+Police de l'app : Azeret Mono SemiBold (même police que l'écran d'Ondes)
+
+Copyright 2021 The Azeret Project Authors (https://github.com/displaay/azeret)
+Dessinée par Martin Vácha, Displaay (https://displaay.net)
+
+Cette police est distribuée sous la licence SIL Open Font License, version 1.1.
+Texte de la licence et questions fréquentes : https://openfontlicense.org

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#e6e9e3">
+<meta name="theme-color" content="#c9d0c2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -12,248 +12,285 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preload" href="AzeretMono-SemiBold.otf" as="font" type="font/otf" crossorigin>
 <style>
-:root{
-  --lcd:#e6e9e3; --ink:#1c211e; --mute:#5f6862; --line:#c3c8c0;
-  --row:66px; --head:46px;
+/* Même graphisme qu'Ondes (écran du lecteur et télécommande web, version 1.15) :
+   LCD monochrome façon iPod, police Azeret Mono SemiBold (licence libre SIL OFL). */
+@font-face {
+  font-family: "Azeret Mono";
+  src: url("AzeretMono-SemiBold.otf") format("opentype");
+  font-weight: 100 900; font-style: normal; font-display: swap;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--lcd);color:var(--ink)}
-body{
-  font:600 17px/1.25 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
-  overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-font-smoothing:antialiased;
+:root {
+  --bg: #c9d0c2;
+  --ink: #1c211e;
+  --mid: #6e766c;
+  --shade: #b6bead;
+  --font: "Azeret Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+  --bar-h: 54px;
+  --row-h: 66px;
+  --row-font: 19px;
+  --pad: 18px;
 }
-#app{
-  display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;
-  padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+@media (min-width: 700px) {
+  :root { --bar-h: 60px; --row-h: 70px; --row-font: 21px; --pad: 26px; }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font); font-synthesis: none; font-weight: 700;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  overscroll-behavior: none; overflow: hidden;
+}
+body::after { /* trame LCD, comme sur l'écran du lecteur */
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 10;
+  background: repeating-linear-gradient(0deg, rgba(28,33,30,.04) 0 1px, transparent 1px 3px);
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+[hidden] { display: none !important; }
+
+/* ---------- mise en page ---------- */
+.app {
+  height: 100vh; height: 100dvh; display: flex;
+  max-width: 1440px; margin: 0 auto;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+.pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.main-pane { flex: 1 1 auto; }
+.side-pane { display: none; }
+@media (min-width: 960px) {
+  .side-pane { display: flex; flex: 0 0 min(42%, 520px); border-left: 3px solid var(--ink); }
+}
+@media (min-width: 1440px) {
+  .app { border-left: 3px solid var(--ink); border-right: 3px solid var(--ink); }
 }
 
-/* En-tête */
-header{
-  flex:none;height:var(--head);display:grid;grid-template-columns:52px 1fr 52px;align-items:center;
-  border-bottom:1.5px solid var(--ink);background:linear-gradient(#eef0ec,var(--lcd));
+/* ---------- barre de titre ---------- */
+.bar {
+  flex: none; height: var(--bar-h);
+  display: grid; grid-template-columns: var(--bar-h) 1fr var(--bar-h); align-items: center;
+  border-bottom: 3px solid var(--ink);
 }
-header h1{font-size:17px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-header button{height:100%;width:52px;border:0;background:none;color:var(--ink);display:grid;place-items:center;cursor:pointer}
-header button svg{width:22px;height:22px}
-
-/* Écrans */
-#panes{flex:1;min-height:0;display:flex;flex-direction:column}
-.view{flex:1;min-height:0;display:none;flex-direction:column}
-.view.on{display:flex}
-.view.in-fwd{animation:inFwd .22s ease-out}
-.view.in-back{animation:inBack .22s ease-out}
-@keyframes inFwd{from{transform:translateX(38%);opacity:0}to{transform:none;opacity:1}}
-@keyframes inBack{from{transform:translateX(-38%);opacity:0}to{transform:none;opacity:1}}
-#main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:12px}
-
-/* Pochettes */
-.cover{flex:none;width:46px;height:46px;border-radius:4px;object-fit:cover;filter:grayscale(1) contrast(1.08);background:#d3d7d0;box-shadow:inset 0 0 0 1px rgba(28,33,30,.18);display:grid;place-items:center;color:var(--mute);overflow:hidden}
-.cover svg{width:22px;height:22px}
-img.cover{box-shadow:none;border:1px solid rgba(28,33,30,.18)}
-
-/* Liste */
-.list{list-style:none}
-.list li{min-height:var(--row);display:flex;align-items:center;gap:14px;padding:9px 16px 9px 12px;cursor:pointer}
-.list .lbl{flex:1;min-width:0;display:flex;flex-direction:column}
-.list .t,.list .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.list .s{font-size:13px;font-weight:500;color:var(--mute);margin-top:3px}
-.list .r{flex:none;width:18px;height:18px}
-.list .r svg{width:18px;height:18px;display:block}
-.list li.press,.list li.cur{background:var(--ink);color:var(--lcd)}
-.list li.press .s,.list li.cur .s{color:inherit;opacity:.72}
-.list li.cur img.cover{border-color:rgba(230,233,227,.35)}
-.list li.cur span.cover{background:#3a413c;color:var(--lcd)}
-.list li.loading .r svg{animation:blink 1s steps(2,start) infinite}
-@keyframes blink{to{visibility:hidden}}
-.msg{padding:48px 20px;text-align:center;color:var(--mute);font-weight:500}
-
-/* Barre de direct (commune) */
-.track{border:1.5px solid var(--ink);border-radius:2px;overflow:hidden}
-.track i{display:block;height:100%;width:0;background:var(--ink)}
-.playing .track i{width:100%}
-.loading .track i,.reconnecting .track i{
-  width:100%;background:repeating-linear-gradient(-45deg,var(--ink) 0 5px,transparent 5px 10px);
-  background-size:14.14px 100%;animation:barber .7s linear infinite;
+.bar h1, .bar h2 {
+  margin: 0; font-size: calc(var(--row-font) - 1px); font-weight: 700; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-@keyframes barber{to{background-position:14.14px 0}}
-.times{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--mute);font-variant-numeric:tabular-nums}
+/* flèche « retour » ↖ : même dessin que l'écran d'Ondes */
+.back { height: 100%; display: grid; place-items: center start; padding: 0 0 0 calc((var(--bar-h) - 26.1px) / 2); }
+.back.off { visibility: hidden; }
+.back svg { width: 21px; height: 21px; display: block; fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; }
+.state { display: grid; place-items: center; height: 100%; }
+.state svg { width: 21px; height: 21px; fill: var(--ink); }
 
-/* Mini-lecteur (liste uniquement) */
-#mini{
-  flex:none;display:none;align-items:center;gap:12px;cursor:pointer;
-  border-top:1.5px solid var(--ink);background:linear-gradient(var(--lcd),#dde1da);
-  padding:10px 12px calc(10px + env(safe-area-inset-bottom)) 12px;
-}
-#mini.on{display:flex}
-#mini.press{background:#d6dad3}
-#mCover{flex:none;display:flex}
-#mini .cover{width:52px;height:52px}
-#mini .cover svg{width:24px;height:24px}
-#mini .txt{flex:1;min-width:0}
-#mini .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#mStat{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;margin-right:10px}
-#mini .track{height:7px;margin:7px 0 5px}
-.round{
-  flex:none;border-radius:50%;border:2px solid var(--ink);background:none;color:var(--ink);
-  display:grid;place-items:center;cursor:pointer;
-}
-.round.press,.plain.press{background:var(--ink);color:var(--lcd)}
-#mToggle{width:52px;height:52px}
-#mToggle svg{width:22px;height:22px}
+.content { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+body.with-mini #listBox { padding-bottom: 76px; }
 
-/* En lecture */
-#np{
-  overflow-y:auto;align-items:center;text-align:center;
-  padding:16px 24px calc(22px + env(safe-area-inset-bottom));
+/* ---------- liste des radios ---------- */
+.row {
+  display: flex; align-items: center; gap: 12px;
+  height: var(--row-h); padding: 0 calc(var(--pad) - 6px) 0 var(--pad);
+  font-size: var(--row-font); white-space: nowrap; cursor: pointer;
 }
-#np .count{font-size:14px;font-weight:600;color:var(--mute)}
-#nCover{display:flex;margin:16px 0 20px}
-#np .cover{
-  width:min(72vw,40vh,320px);height:min(72vw,40vh,320px);border-radius:6px;
-  box-shadow:0 1px 0 rgba(28,33,30,.08);
+.row .lbl { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.row .label, .row .sub { overflow: hidden; text-overflow: ellipsis; }
+.row .sub { font-size: 13px; color: var(--mid); }
+.row .mark { flex: none; width: 18px; height: 18px; fill: currentColor; }
+.row.busy .mark { animation: blink 1s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+.row.press { background: var(--ink); color: var(--bg); }
+.row.press .sub { color: var(--shade); }
+@media (hover: hover) {
+  .row:hover { background: var(--ink); color: var(--bg); }
+  .row:hover .sub { color: var(--shade); }
 }
-#np span.cover{box-shadow:inset 0 0 0 1px rgba(28,33,30,.18)}
-#np span.cover svg{width:34%;height:34%}
-#np .name{font-size:24px;font-weight:700;line-height:1.15;word-break:break-word}
-#np .song{font-size:17px;font-weight:600;line-height:1.3;margin-top:8px;max-width:520px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#np .song:empty{display:none}
-#np .place{font-size:16px;font-weight:500;color:var(--mute);margin-top:6px}
-#np .qual{font-size:13px;font-weight:600;color:var(--mute);margin-top:4px;letter-spacing:.02em}
-#np .bar{width:100%;margin-top:auto;padding-top:22px}
-#np .track{height:11px;margin-bottom:7px}
-#np .ctl{display:flex;justify-content:center;align-items:center;gap:26px;margin-top:22px}
-.plain{width:60px;height:60px;border-radius:50%;border:0;background:none;color:var(--ink);display:grid;place-items:center;cursor:pointer}
-.plain svg{width:28px;height:28px}
-.plain:disabled{opacity:.25;cursor:default}
-#nToggle{width:80px;height:80px}
-#nToggle svg{width:32px;height:32px}
-#np .note{margin-top:16px;font-size:13px;font-weight:500;color:var(--mute);line-height:1.4}
-#np .empty{display:none}
-#np.idle > *{display:none}
-#np.idle > .empty{display:flex;flex:1;align-items:center;justify-content:center;color:var(--mute);font-weight:500}
+.empty { padding: 36px var(--pad); text-align: center; color: var(--mid); font-size: calc(var(--row-font) - 3px); line-height: 1.45; }
 
-/* Survol à la souris (ordinateur) */
-@media (hover:hover){
-  .list li:not(.cur):hover{background:#d9ddd6}
-  .plain:not(:disabled):hover{background:#d9ddd6}
+/* ---------- pochettes (niveaux de gris dans les teintes de l'écran) ---------- */
+.thumb {
+  flex: none; width: 44px; height: 44px; margin-right: 4px;
+  background: #bac2b3; box-shadow: 0 0 0 1px var(--ink); overflow: hidden;
+}
+.thumb img, .cover img { width: 100%; height: 100%; display: block; object-fit: cover; }
+img.gray { filter: grayscale(1) contrast(1.1); }
+
+/* ---------- en lecture ---------- */
+.now {
+  min-height: 100%; display: flex; flex-direction: column;
+  padding: 14px var(--pad) calc(18px + env(safe-area-inset-bottom));
+  max-width: 760px; margin: 0 auto;
+}
+.now .coverwrap { flex: none; align-self: center; width: min(300px, 62vw, 34vh); margin: 6px auto 0; }
+.now .cover {
+  position: relative; width: 100%; aspect-ratio: 1; margin: 0 0 4px;
+  background: #bac2b3; box-shadow: 0 0 0 3px var(--ink);
+  display: grid; place-items: center;
+}
+.now .cover img { position: absolute; inset: 0; }
+.now .cover .ph { position: absolute; inset: 0; display: grid; place-items: center; }
+.now .cover .ph svg { width: 34%; height: auto; fill: var(--ink); }
+.now .cover.has .ph { display: none; }
+.now .side { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.now .meta {
+  flex: 1 1 auto; min-height: 150px;
+  display: flex; flex-direction: column; text-align: center; gap: 8px;
+}
+.now .side .meta { min-height: 110px; }
+.now .meta .gap { flex: 1 1 0; display: block; }
+.now .meta .gap.end { flex-grow: 2; }
+.now .kind { font-size: 15px; color: var(--mid); margin-bottom: -2px; }
+.now .t { font-size: clamp(24px, 6vw, 34px); overflow: hidden; white-space: nowrap; }
+.now .t.idle { color: var(--mid); font-size: clamp(19px, 4.5vw, 24px); }
+.now .t span { display: inline-block; }
+.now .t.scroll span { padding-left: 100%; animation: marquee var(--dur, 12s) linear infinite; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+/* le morceau en cours : sur deux lignes au plus, pour qu'on puisse le lire en entier */
+.now .a { font-size: clamp(18px, 4.4vw, 24px); line-height: 1.25; max-height: 2.5em; overflow: hidden; overflow-wrap: anywhere; }
+.now .al { font-size: clamp(15px, 3.6vw, 18px); color: var(--mid); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.now .a:empty, .now .al:empty, .now .kind:empty { display: none; }
+.live { text-align: center; font-size: 15px; color: var(--mid); min-height: 49px; padding-top: 12px; font-variant-numeric: tabular-nums; }
+.live .why { font-size: 13px; line-height: 1.4; margin-top: 6px; }
+.live.busy .st { animation: blink 1s steps(2, start) infinite; }
+
+.ctrls { display: flex; justify-content: space-around; align-items: center; margin-top: 22px; }
+.ctrls button { width: 33%; height: 68px; display: grid; place-items: center; border-radius: 10px; }
+.ctrls button svg { width: auto; height: 30px; fill: var(--ink); display: block; }
+.ctrls button:disabled { opacity: .3; cursor: default; }
+.ctrls button:not(:disabled):active { background: var(--ink); }
+.ctrls button:not(:disabled):active svg { fill: var(--bg); }
+@media (hover: hover) { .ctrls button:not(:disabled):hover { background: var(--shade); } }
+
+/* écran large et peu haut (téléphone ou tablette à l'horizontale) : pochette à gauche */
+@media (min-width: 640px) and (max-width: 959px) and (max-height: 700px) {
+  .now { flex-direction: row; gap: 28px; align-items: stretch; max-width: none; }
+  .now .coverwrap { width: min(300px, 40vw, calc(100dvh - var(--bar-h) - 48px)); margin: 4px 0; align-self: center; }
+  .now .meta, .now .side .meta { min-height: 0; }
+  .ctrls { margin-top: 8px; }
 }
 
-/* iPhone à l'horizontale : jaquette à gauche, infos à droite */
-@media (orientation:landscape) and (max-height:520px){
-  #np.on:not(.idle){
-    display:grid;grid-template-columns:auto 1fr;grid-auto-rows:auto;align-content:center;
-    column-gap:28px;text-align:left;align-items:center;
-    padding:12px max(24px,env(safe-area-inset-right)) 12px max(24px,env(safe-area-inset-left));
-  }
-  #nCover{grid-column:1;grid-row:1 / span 9;margin:0}
-  #np .cover{width:min(62vh,260px);height:min(62vh,260px)}
-  #np > :not(#nCover){grid-column:2}
-  #np .bar{margin-top:0;padding-top:14px}
-  #np .ctl{justify-content:flex-start;margin-top:12px;gap:18px}
-  #np .name{font-size:22px}
+/* ---------- mini-lecteur (petits écrans, sur la liste) ---------- */
+.mini {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  display: flex; align-items: center; gap: 4px;
+  min-height: 68px; padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(var(--pad), env(safe-area-inset-left));
+  background: var(--bg); border-top: 3px solid var(--ink); cursor: pointer;
 }
-
-/* iPad et ordinateur : liste à gauche, lecture à droite */
-@media (min-width:760px) and (min-height:521px){
-  #app{max-width:1180px}
-  #panes{flex-direction:row}
-  #vList{display:flex !important;flex:none;width:min(40%,420px);border-right:1.5px solid var(--ink);animation:none !important}
-  #np{display:flex !important;flex:1;animation:none !important;padding:28px 40px 32px;justify-content:safe center}
-  #mini{display:none !important}
-  #back{visibility:hidden !important}
-  #np .cover{width:min(44vh,100vw - min(40vw,420px) - 120px,400px);height:min(44vh,100vw - min(40vw,420px) - 120px,400px);border-radius:8px}
-  #nCover{margin:22px 0 26px}
-  #np .name{font-size:28px}
-  #np .place{font-size:17px}
-  #np .bar{max-width:520px;margin-top:34px;padding-top:0}
-  #np .ctl{gap:34px;margin-top:28px}
-  #nToggle{width:88px;height:88px}
-  #np.idle > .empty{font-size:18px}
-}
-@media (min-width:1100px){
-  #app{border-left:1.5px solid var(--line);border-right:1.5px solid var(--line)}
-}
+.mini-text { flex: 1 1 auto; min-width: 0; }
+.mini-t { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-a { font-size: 13px; color: var(--mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.mini button { flex: none; width: 50px; height: 50px; display: grid; place-items: center; border-radius: 8px; }
+.mini button svg { width: auto; height: 20px; fill: var(--ink); display: block; }
+.mini button:disabled { opacity: .3; }
+.mini button:not(:disabled):active { background: var(--ink); }
+.mini button:not(:disabled):active svg { fill: var(--bg); }
 </style>
 </head>
 <body>
-<div id="app">
-  <header>
-    <button id="back" aria-label="Retour" style="visibility:hidden"></button>
-    <h1 id="title">Ondes</h1>
-    <span></span>
-  </header>
-
-  <div id="panes">
-  <!-- Liste des radios -->
-  <section class="view on" id="vList">
-    <main id="main"><div class="msg">Chargement…</div></main>
-    <div id="mini" aria-live="polite">
-      <span id="mCover"></span>
-      <div class="txt">
-        <div class="name" id="mName"></div>
-        <div class="track"><i></i></div>
-        <div class="times"><span id="mStat"></span><span id="mTime"></span></div>
-      </div>
-      <button id="mToggle" class="round" aria-label="Lecture"></button>
-    </div>
+<div class="app">
+  <section class="pane main-pane">
+    <header class="bar">
+      <button class="back off" id="back" aria-label="Retour"><svg viewBox="0 0 25 25"><path d="M22.81 2.19L2.19 2.19L2.19 22.81" stroke-width="4.38"/><path d="M2.79 2.79L21.48 21.48" stroke-width="5.45"/></svg></button>
+      <h1 id="title">Ondes</h1>
+      <button type="button" class="state" id="state" aria-label="En lecture"></button>
+    </header>
+    <div class="content" id="listBox"><div class="empty">Chargement…</div></div>
+    <div class="content" id="nowBox" hidden></div>
   </section>
-
-  <!-- En lecture -->
-  <section class="view" id="np">
-    <div class="count" id="nCount"></div>
-    <span id="nCover"></span>
-    <div class="name" id="nName"></div>
-    <div class="song" id="nSong"></div>
-    <div class="place" id="nPlace"></div>
-    <div class="qual" id="nQual"></div>
-    <div class="bar" id="nBar">
-      <div class="track"><i></i></div>
-      <div class="times"><span id="nTime"></span><span id="nStat"></span></div>
-    </div>
-    <div class="ctl">
-      <button id="nPrev" class="plain" aria-label="Radio précédente"></button>
-      <button id="nToggle" class="round" aria-label="Lecture"></button>
-      <button id="nNext" class="plain" aria-label="Radio suivante"></button>
-    </div>
-    <div class="note" id="nNote"></div>
-    <div class="empty" id="nEmpty">Choisis une radio</div>
-  </section>
-  </div>
+  <aside class="pane side-pane" aria-label="En lecture">
+    <header class="bar"><span></span><h2>En lecture</h2><span></span></header>
+    <div class="content" id="sideBox"></div>
+  </aside>
 </div>
+
+<nav class="mini" id="mini" hidden aria-label="Lecture en cours">
+  <div class="mini-text"><div class="mini-t" id="miniT"></div><div class="mini-a" id="miniA"></div></div>
+  <button type="button" data-c="prev" aria-label="Radio précédente"></button>
+  <button type="button" data-c="play" aria-label="Lecture"></button>
+  <button type="button" data-c="next" aria-label="Radio suivante"></button>
+</nav>
 
 <script>
 (() => {
 'use strict';
+/* Dessins communs avec Ondes (ondes/ui/icons.py) : commandes aux formes arrondies */
 const ICON = {
-  back: '<svg viewBox="0 0 24 24"><path d="M15 4 7 12l8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  play: '<svg viewBox="0 0 24 24"><path d="M7.5 4.5v15l12-7.5z" fill="currentColor"/></svg>',
-  pause: '<svg viewBox="0 0 24 24"><path d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z" fill="currentColor"/></svg>',
-  prev: '<svg viewBox="0 0 24 24"><path d="M4 5h2.5v14H4zM20 5v14l-6-7zM14 5v14l-7-7z" fill="currentColor"/></svg>',
-  next: '<svg viewBox="0 0 24 24"><path d="M17.5 5H20v14h-2.5zM4 5v14l6-7zM10 5v14l7-7z" fill="currentColor"/></svg>',
-  speaker: '<svg viewBox="0 0 24 24"><path d="M3.5 9h4l5-4v14l-5-4h-4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.6 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-  waves: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  prev: '<svg viewBox="0 0 27.27 25"><path d="M21.95 24.36L9.4 15.21A3.35 3.35 0 0 1 9.4 9.79L21.95 0.64A3.35 3.35 0 0 1 27.28 3.35L27.28 21.65A3.35 3.35 0 0 1 21.95 24.36ZM0 22.21L0 2.79A2.79 2.79 0 0 1 5.58 2.79L5.58 22.21A2.79 2.79 0 0 1 0 22.21Z"/></svg>',
+  next: '<svg viewBox="0 0 27.27 25"><path d="M5.32 0.64L17.87 9.79A3.35 3.35 0 0 1 17.87 15.21L5.32 24.36A3.35 3.35 0 0 1 0 21.65L0 3.35A3.35 3.35 0 0 1 5.32 0.64ZM27.27 2.79L27.27 22.21A2.79 2.79 0 0 1 21.7 22.21L21.7 2.79A2.79 2.79 0 0 1 27.27 2.79Z"/></svg>',
+  play: '<svg viewBox="0 0 24.35 25"><path d="M4.75 0.36L22.6 9.61A3.25 3.25 0 0 1 22.6 15.39L4.75 24.64A3.25 3.25 0 0 1 0 21.75L0 3.25A3.25 3.25 0 0 1 4.75 0.36Z"/></svg>',
+  stop: '<svg viewBox="0 0 25 25"><path d="M3.95 0L21.05 0A3.95 3.95 0 0 1 25 3.95L25 21.05A3.95 3.95 0 0 1 21.05 25L3.95 25A3.95 3.95 0 0 1 0 21.05L0 3.95A3.95 3.95 0 0 1 3.95 0Z"/></svg>',
+  spk: '<svg class="mark" viewBox="0 0 14 14"><path d="M1 5h3l4-4v12L4 9H1zM10 4.5a4 4 0 0 1 0 5l-1-1a2.6 2.6 0 0 0 0-3z"/></svg>',
+  spkHi: '<svg viewBox="0 0 16 14"><path d="M1 5h3l4-4v12L4 9H1zM10 4.2a4 4 0 0 1 0 5.6l-1-1a2.6 2.6 0 0 0 0-3.6zM12.3 2a7 7 0 0 1 0 10l-1-1a5.6 5.6 0 0 0 0-8z"/></svg>',
 };
 const $ = id => document.getElementById(id);
 const absUrl = u => new URL(u, location.href).href;
-
-/* Pochette en niveaux de gris ; à défaut, un pictogramme d'ondes */
-function cover(logo) {
-  const ph = () => { const s = document.createElement('span'); s.className = 'cover'; s.innerHTML = ICON.waves; return s; };
-  if (!logo) return ph();
-  const img = new Image();
-  img.className = 'cover'; img.alt = ''; img.decoding = 'async'; img.src = logo;
-  img.onerror = () => img.replaceWith(ph());
-  return img;
-}
-function setCover(slot, logo) {
-  const k = logo || '-';
-  if (slot.dataset.k === k) return;
-  slot.dataset.k = k;
-  slot.replaceChildren(cover(logo));
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
 }
 
-/* ---------- Radios (gérées depuis le back office) ---------- */
+/* ---------- Pochettes : même rendu qu'Ondes (ondes/covers.py) ----------
+   carré centré, niveaux de gris, contraste rehaussé pour les images ternes,
+   puis teintes de l'écran, de l'encre (noir) au fond (vert-gris). */
+const INK = [28, 33, 30], BG = [201, 208, 194];
+const toned = new Map();
+function lcd(url, px) {
+  const key = url + '@' + px;
+  if (!toned.has(key)) toned.set(key, new Promise(ok => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => {
+      try {
+        const w = img.naturalWidth, h = img.naturalHeight, s = Math.min(w, h);
+        const c = document.createElement('canvas'); c.width = c.height = px;
+        const g = c.getContext('2d', { willReadFrequently: true });
+        g.fillStyle = '#fff'; g.fillRect(0, 0, px, px);           // logos transparents : fond blanc
+        g.imageSmoothingQuality = 'high';
+        g.drawImage(img, (w - s) / 2, (h - s) / 2, s, s, 0, 0, px, px);
+        const d = g.getImageData(0, 0, px, px), p = d.data, n = px * px;
+        const L = new Float32Array(n), hist = new Uint32Array(1024);
+        for (let i = 0; i < n; i++) {
+          const v = (p[i * 4] * 0.2126 + p[i * 4 + 1] * 0.7152 + p[i * 4 + 2] * 0.0722) / 255;
+          L[i] = v; hist[Math.min(1023, v * 1024 | 0)]++;
+        }
+        const pct = q => { let acc = 0; const lim = n * q; for (let b = 0; b < 1024; b++) { acc += hist[b]; if (acc >= lim) return b / 1023; } return 1; };
+        const lo = pct(0.015), hi = pct(0.985), stretch = hi - lo > 0.12;
+        for (let i = 0; i < n; i++) {
+          let v = stretch ? (L[i] - lo) / (hi - lo) : L[i];
+          v = Math.pow(Math.min(1, Math.max(0, v)), 0.9);
+          p[i * 4] = INK[0] + (BG[0] - INK[0]) * v;
+          p[i * 4 + 1] = INK[1] + (BG[1] - INK[1]) * v;
+          p[i * 4 + 2] = INK[2] + (BG[2] - INK[2]) * v;
+          p[i * 4 + 3] = 255;
+        }
+        g.putImageData(d, 0, 0);
+        ok({ src: c.toDataURL('image/jpeg', 0.9), tone: true });
+      } catch (e) { ok({ src: url, tone: false }); }       // image d'un autre site : simple gris
+    };
+    img.onerror = () => ok(null);
+    img.src = url;
+  }));
+  return toned.get(key);
+}
+/* Remplit une case de pochette (vignette de liste ou grande pochette) */
+function fillCover(box, logo, size) {
+  const k = logo || '';
+  if (box.dataset.k === k) return;
+  box.dataset.k = k;
+  box.classList.remove('has');
+  const old = box.querySelector('img'); if (old) old.remove();
+  if (!logo) return;
+  const px = Math.round(size * Math.min(2, window.devicePixelRatio || 1));
+  lcd(logo, px).then(res => {
+    if (!res || box.dataset.k !== k) return;
+    const img = el('img'); img.alt = ''; img.src = res.src;
+    if (!res.tone) img.className = 'gray';
+    box.prepend(img); box.classList.add('has');
+  });
+}
+
+/* ---------- Radios (liste publiée dans radios.json) ---------- */
 let radios = [];
 const CACHE_KEY = 'ondes.radios.cache';
 function quality(r) {
@@ -368,7 +405,10 @@ function pollTrack() {
     .then(res => res.ok ? res.json() : null)
     .then(j => {
       if (!P.r || P.r.url !== url) return;
-      const t = (j && j.title) || '';
+      const clean = v => String(v || '').replace(/[\u0000-\u001f\u007f\u200b-\u200f\ufeff]/g, '').replace(/\s+/g, ' ').trim();
+      const t0 = clean(j && j.title);
+      const t = /[\p{L}\p{N}]/u.test(t0) ? t0 : '';
+      if (j) { j.artist = clean(j.artist); j.song = clean(j.song); }
       T.fails = j ? 0 : T.fails + 1;
       // on ignore un « titre » qui n'est que le nom de la radio
       const useful = t && t.toLowerCase() !== P.r.name.toLowerCase();
@@ -491,43 +531,40 @@ if ('mediaSession' in navigator) {
   set('previoustrack', () => step(-1));
 }
 
-/* ---------- Navigation : liste ⇄ en lecture ---------- */
+/* ---------- Navigation ----------
+   petit écran : la liste, ou « En lecture » à sa place (flèche ↖ pour revenir)
+   grand écran (≥ 960 px, comme Ondes) : la liste à gauche, « En lecture » toujours à droite */
 let view = 'list';
-const vList = $('vList'), vNp = $('np'), backBtn = $('back'), titleEl = $('title');
-backBtn.innerHTML = ICON.back;
-
-function show(v, dir) {
-  view = v;
-  const el = v === 'np' ? vNp : vList, other = v === 'np' ? vList : vNp;
-  other.classList.remove('on', 'in-fwd', 'in-back');
-  el.classList.remove('in-fwd', 'in-back');
-  el.classList.add('on');
-  if (dir) { void el.offsetWidth; el.classList.add(dir === 'fwd' ? 'in-fwd' : 'in-back'); }
-  titleEl.textContent = v === 'np' && !wide() ? 'En lecture' : 'Ondes';
-  backBtn.style.visibility = v === 'np' ? 'visible' : 'hidden';
-  paint();
-}
-const wideMQ = matchMedia('(min-width:760px) and (min-height:521px)');
+const listBox = $('listBox'), nowBox = $('nowBox'), sideBox = $('sideBox');
+const backBtn = $('back'), titleEl = $('title'), stateBtn = $('state'), mini = $('mini');
+const wideMQ = matchMedia('(min-width: 960px)');
 const wide = () => wideMQ.matches;
-function onWideChange() {
-  // en passant en grand écran, plus besoin de l'écran « En lecture » séparé
-  if (wide() && view === 'np') history.back();
+let listScroll = 0;
+
+function show(v) {
+  if (v === 'now' && view !== 'now') listScroll = listBox.scrollTop;
+  view = v;
+  const now = v === 'now' && !wide();
+  listBox.hidden = now;
+  nowBox.hidden = !now;
+  if (now) nowBox.scrollTop = 0; else listBox.scrollTop = listScroll;
   paint();
 }
-wideMQ.addEventListener ? wideMQ.addEventListener('change', onWideChange) : wideMQ.addListener(onWideChange);
-function openNp() {
-  if (wide() || !P.r || view === 'np') return;
-  history.pushState({ v: 'np' }, '');
-  show('np', 'fwd');
+function openNow() {
+  if (wide() || !P.r || view === 'now') return;
+  history.pushState({ v: 'now' }, '');
+  show('now');
 }
-function goBack() { if (view === 'np') history.back(); }
-window.addEventListener('popstate', () => { if (view === 'np') show('list', 'back'); });
+function goBack() { if (view === 'now') history.back(); }
+window.addEventListener('popstate', () => { if (view === 'now') show('list'); });
+function onWide() { if (wide() && view === 'now') history.back(); else show(view); }
+wideMQ.addEventListener ? wideMQ.addEventListener('change', onWide) : wideMQ.addListener(onWide);
 
 /* Glisser depuis le bord gauche = retour (pratique en mode app sur iPhone) */
 let edge = null;
 document.addEventListener('touchstart', e => {
   const t = e.touches[0];
-  edge = view === 'np' && t.clientX < 28 ? { x: t.clientX, y: t.clientY } : null;
+  edge = view === 'now' && t.clientX < 28 ? { x: t.clientX, y: t.clientY } : null;
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (!edge) return;
@@ -536,88 +573,154 @@ document.addEventListener('touchend', e => {
   edge = null;
 }, { passive: true });
 
-/* ---------- Affichage ---------- */
-function bindPress(el, onTap) {
+/* Appui : la ligne s'inverse comme sur l'écran du lecteur */
+function bindPress(node, onTap) {
   let sx = 0, sy = 0;
-  const off = () => el.classList.remove('press');
-  el.addEventListener('pointerdown', e => { if (el.disabled) return; sx = e.clientX; sy = e.clientY; el.classList.add('press'); });
-  el.addEventListener('pointermove', e => { if (Math.abs(e.clientX - sx) > 8 || Math.abs(e.clientY - sy) > 8) off(); });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => el.addEventListener(ev, off));
-  el.addEventListener('click', e => { e.stopPropagation(); onTap(e); });
-  el.addEventListener('contextmenu', e => e.preventDefault());
+  const off = () => node.classList.remove('press');
+  node.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; node.classList.add('press'); });
+  node.addEventListener('pointermove', e => { if (Math.abs(e.clientX - sx) > 8 || Math.abs(e.clientY - sy) > 8) off(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => node.addEventListener(ev, off));
+  node.addEventListener('click', onTap);
+  node.addEventListener('contextmenu', e => e.preventDefault());
 }
 
-const main = $('main');
+/* ---------- Liste ---------- */
 let rows = [];
 function renderList() {
-  main.replaceChildren();
   rows = [];
-  if (!radios.length) { main.innerHTML = '<div class="msg">Aucune radio pour le moment</div>'; paint(); return; }
-  const ul = document.createElement('ul');
-  ul.className = 'list';
+  if (!radios.length) { listBox.replaceChildren(el('div', 'empty', 'Aucune radio pour le moment')); paint(); return; }
+  const thumbs = radios.some(r => r.logo);
+  const frag = document.createDocumentFragment();
   radios.forEach(r => {
-    const li = document.createElement('li');
-    const lbl = document.createElement('span'); lbl.className = 'lbl';
-    const t = document.createElement('span'); t.className = 't'; t.textContent = r.name;
-    lbl.append(t);
+    const row = el('div', 'row');
+    let th = null;
+    if (thumbs) { th = el('span', 'thumb'); row.append(th); }
+    const lbl = el('span', 'lbl');
+    lbl.append(el('span', 'label', r.name));
     const sub = subline(r);
-    if (sub) { const s = document.createElement('span'); s.className = 's'; s.textContent = sub; lbl.append(s); }
-    const ic = document.createElement('span'); ic.className = 'r';
-    li.append(cover(r.logo), lbl, ic);
-    bindPress(li, () => {
+    if (sub) lbl.append(el('span', 'sub', sub));
+    const mark = el('span');
+    row.append(lbl, mark);
+    bindPress(row, () => {
       const same = P.r && P.r.url === r.url;
       if (!same || !isOn()) play(r);   // la radio en cours continue, les autres démarrent
-      openNp();
+      openNow();
     });
-    ul.append(li);
-    rows.push({ r, li, ic });
+    frag.append(row);
+    rows.push({ r, row, mark });
+    if (th) fillCover(th, r.logo, 44);
   });
-  main.append(ul);
+  listBox.replaceChildren(frag);
   paint();
 }
 
-const mini = $('mini'), mToggle = $('mToggle'), nToggle = $('nToggle'), nPrev = $('nPrev'), nNext = $('nNext');
-nPrev.innerHTML = ICON.prev; nNext.innerHTML = ICON.next;
+/* ---------- En lecture (même composition que la page d'Ondes) ---------- */
+function makeNow(container) {
+  const n = el('div', 'now');
+  n.innerHTML = `
+    <div class="coverwrap"><div class="cover"><span class="ph">${ICON.spkHi}</span></div></div>
+    <div class="side">
+      <div class="meta"><i class="gap"></i><div class="kind"></div><div class="t"><span></span></div><div class="a"></div><div class="al"></div><i class="gap end"></i></div>
+      <div class="live"><div class="st"></div><div class="why"></div></div>
+      <div class="ctrls">
+        <button type="button" data-c="prev" aria-label="Radio précédente">${ICON.prev}</button>
+        <button type="button" data-c="play" aria-label="Lecture"></button>
+        <button type="button" data-c="next" aria-label="Radio suivante">${ICON.next}</button>
+      </div>
+    </div>`;
+  container.replaceChildren(n);
+  const q = s => n.querySelector(s);
+  const v = {
+    cover: q('.cover'), kind: q('.kind'), t: q('.t'), ts: q('.t span'), a: q('.a'), al: q('.al'),
+    live: q('.live'), st: q('.live .st'), why: q('.live .why'),
+    prev: q('[data-c=prev]'), mid: q('[data-c=play]'), next: q('[data-c=next]'), shown: null,
+  };
+  q('.ctrls').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !b.disabled) transport(b.dataset.c); });
+  return v;
+}
+const nowViews = [makeNow(nowBox), makeNow(sideBox)];
+
+function transport(c) {
+  if (c === 'prev') step(-1);
+  else if (c === 'next') step(1);
+  else if (P.r) toggle();
+  else if (radios[0]) play(radios[0]);
+}
+const songText = () => T.title ? (T.artist ? T.artist + ' — ' + T.song : T.song) : '';
+const liveText = s => s === 'playing' ? 'En direct · ' + fmt(elapsed()) : label(s);
+function causeText(r, s) {
+  if (s === 'error' && /^http:/i.test(r.url) && location.protocol === 'https:')
+    return 'Ce flux est en http : le navigateur peut le bloquer sur une page https.';
+  if ((s === 'reconnecting' || s === 'error') && P.lastErr != null && CAUSE[P.lastErr])
+    return 'Cause : ' + CAUSE[P.lastErr] + (typeof P.lastErr === 'number' ? ` (code ${P.lastErr})` : '');
+  return '';
+}
+
+function updateNow(v) {
+  const r = P.r, s = P.state, on = isOn();
+  const i = r ? radios.findIndex(x => x.url === r.url) : -1;
+  v.kind.textContent = r ? (i >= 0 ? `${i + 1} sur ${radios.length}` : 'Radio') : '';
+  const title = r ? r.name : 'Rien en lecture';
+  v.t.classList.toggle('idle', !r);
+  if (v.shown !== title) {                      // nom trop long : il défile, comme sur Ondes
+    v.shown = title;
+    v.ts.textContent = title;
+    v.t.classList.remove('scroll');
+    requestAnimationFrame(() => {
+      if (v.ts.offsetWidth > v.t.clientWidth) {
+        v.t.style.setProperty('--dur', `${Math.max(8, title.length / 3)}s`);
+        v.t.classList.add('scroll');
+      }
+    });
+  }
+  v.a.textContent = r ? songText() : '';
+  v.al.textContent = r ? [place(r), quality(r)].filter(Boolean).join(' · ') : '';
+  fillCover(v.cover, r && r.logo, 300);
+  v.live.hidden = !r;
+  v.live.classList.toggle('busy', isBusy(s) || s === 'offline');
+  if (r) { v.st.textContent = liveText(s); v.why.textContent = causeText(r, s); }
+  const icon = on ? 'stop' : 'play';
+  if (v.mid.dataset.icon !== icon) { v.mid.dataset.icon = icon; v.mid.innerHTML = ICON[icon]; }
+  v.mid.setAttribute('aria-label', on ? 'Arrêter' : 'Lecture');
+  v.prev.disabled = v.next.disabled = radios.length < 2;
+}
+
+/* ---------- Mini-lecteur ---------- */
+mini.querySelector('[data-c=prev]').innerHTML = ICON.prev;
+mini.querySelector('[data-c=next]').innerHTML = ICON.next;
+mini.addEventListener('click', e => {
+  const b = e.target.closest('button[data-c]');
+  if (b) { if (!b.disabled) transport(b.dataset.c); } else openNow();
+});
+function updateMini() {
+  const r = P.r, s = P.state;
+  const visible = !!r && !wide() && view === 'list';
+  mini.hidden = !visible;
+  document.body.classList.toggle('with-mini', visible);
+  if (!visible) return;
+  // comme sur Ondes : le morceau s'il est annoncé, sinon le nom de la radio
+  $('miniT').textContent = T.title ? T.song : r.name;
+  $('miniA').textContent = T.title ? [T.artist, r.name].filter(Boolean).join(' · ') : liveText(s);
+  const b = mini.querySelector('[data-c=play]'), icon = isOn() ? 'stop' : 'play';
+  if (b.dataset.icon !== icon) { b.dataset.icon = icon; b.innerHTML = ICON[icon]; }
+  mini.querySelectorAll('[data-c=prev],[data-c=next]').forEach(x => { x.disabled = radios.length < 2; });
+}
 
 function paint() {
-  const on = isOn(), r = P.r, s = P.state;
-  // liste
-  for (const { r: x, li, ic } of rows) {
-    const cur = !!r && r.url === x.url;
-    li.classList.toggle('cur', cur);
-    li.classList.toggle('loading', cur && isBusy(s));
-    ic.innerHTML = cur ? (on ? ICON.speaker : ICON.pause) : '';
+  const r = P.r, s = P.state, on = isOn();
+  for (const { r: x, row, mark } of rows) {
+    const cur = !!r && r.url === x.url && on;
+    row.classList.toggle('busy', cur && isBusy(s));
+    if (cur !== (mark.dataset.on === '1')) { mark.dataset.on = cur ? '1' : ''; mark.innerHTML = cur ? ICON.spk : ''; }
   }
-  // mini-lecteur : seulement sur la liste
-  mini.className = r && view === 'list' && !wide() ? 'on ' + s : '';
-  vNp.classList.toggle('idle', !r);
-  if (r) {
-    setCover($('mCover'), r.logo);
-    $('mName').textContent = r.name;
-    $('mStat').textContent = s === 'playing' && T.title ? (T.artist ? T.artist + ' – ' + T.song : T.song) : label(s);
-    mToggle.innerHTML = on ? ICON.pause : ICON.play;
-    mToggle.setAttribute('aria-label', on ? 'Pause' : 'Lecture');
-  }
-  // écran de lecture
-  if (r) {
-    const i = radios.findIndex(x => x.url === r.url);
-    $('nCount').textContent = i >= 0 ? `${i + 1} sur ${radios.length}` : '';
-    setCover($('nCover'), r.logo);
-    $('nName').textContent = r.name;
-    $('nSong').textContent = T.title ? (T.artist ? T.artist + ' – ' + T.song : T.song) : '';
-    $('nPlace').textContent = place(r);
-    $('nQual').textContent = quality(r);
-    $('nBar').className = 'bar ' + s;
-    $('nStat').textContent = label(s);
-    nToggle.innerHTML = on ? ICON.pause : ICON.play;
-    nToggle.setAttribute('aria-label', on ? 'Pause' : 'Lecture');
-    nPrev.disabled = nNext.disabled = radios.length < 2;
-    $('nNote').textContent = s === 'error' && /^http:/i.test(r.url) && location.protocol === 'https:'
-      ? 'Ce flux est en http : le navigateur peut le bloquer sur une page https.'
-      : (s === 'reconnecting' || s === 'error') && P.lastErr != null && CAUSE[P.lastErr]
-        ? 'Cause : ' + CAUSE[P.lastErr] + (typeof P.lastErr === 'number' ? ` (code ${P.lastErr})` : '') : '';
-  }
-  tick();
+  const nowNarrow = view === 'now' && !wide();
+  titleEl.textContent = nowNarrow ? 'En lecture' : 'Ondes';
+  backBtn.classList.toggle('off', !nowNarrow);
+  const st = !!r && !wide() && view === 'list';
+  stateBtn.innerHTML = st ? ICON.spkHi : '';
+  stateBtn.disabled = !st;
+  nowViews.forEach(updateNow);
+  updateMini();
   if ('mediaSession' in navigator) navigator.mediaSession.playbackState = on ? 'playing' : (r ? 'paused' : 'none');
 }
 const fmt = ms => {
@@ -625,26 +728,25 @@ const fmt = ms => {
   const p = n => String(n).padStart(2, '0');
   return h ? `${h}:${p(m)}:${p(ss)}` : `${m}:${p(ss)}`;
 };
-function tick() { if (P.r) { const t = fmt(elapsed()); $('mTime').textContent = t; $('nTime').textContent = t; } }
-setInterval(tick, 1000);
+setInterval(() => {
+  if (!P.r || P.state !== 'playing') return;
+  nowViews.forEach(v => { v.st.textContent = liveText(P.state); });
+  if (!mini.hidden && !T.title) $('miniA').textContent = liveText(P.state);
+}, 1000);
 
-bindPress(mini, openNp);
-bindPress(mToggle, toggle);
-bindPress(nToggle, toggle);
-bindPress(nPrev, () => step(-1));
-bindPress(nNext, () => step(1));
 bindPress(backBtn, goBack);
+stateBtn.addEventListener('click', openNow);
 
-/* Clavier (ordinateur) : espace = lecture/pause, ← → = radio précédente/suivante, Échap = retour */
+/* Clavier (ordinateur) : espace = lecture/arrêt, flèches = radio précédente/suivante, Échap = retour */
 document.addEventListener('keydown', e => {
   if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea/i.test(e.target.tagName)) return;
-  if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); P.r ? toggle() : radios[0] && play(radios[0]); }
+  if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); transport('play'); }
   else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); step(1); }
   else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); step(-1); }
   else if (e.key === 'Escape') goBack();
 });
 
-/* Liste à jour quand on revient sur l'app (si tu as modifié le back office entre-temps) */
+/* Liste à jour quand on revient sur l'app (si tu as modifié radios.json entre-temps) */
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !isOn()) loadRadios(); });
 
 history.replaceState({ v: 'list' }, '');
