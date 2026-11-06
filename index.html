@@ -84,7 +84,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .state svg { width: 21px; height: 21px; fill: var(--ink); }
 
 .content { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-body.with-mini #listBox { padding-bottom: 76px; }
+body.with-mini #listBox, body.with-mini #pageBox { padding-bottom: 76px; }
 
 /* ---------- liste des radios ---------- */
 .row {
@@ -104,7 +104,31 @@ body.with-mini #listBox { padding-bottom: 76px; }
   .row:hover { background: var(--ink); color: var(--bg); }
   .row:hover .sub { color: var(--shade); }
 }
-.empty { padding: 36px var(--pad); text-align: center; color: var(--mid); font-size: calc(var(--row-font) - 3px); line-height: 1.45; }
+.empty { padding: 36px var(--pad); text-align: center; color: var(--mid); font-size: calc(var(--row-font) - 3px); line-height: 1.45; white-space: pre-line; }
+.row .right { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; font-size: .72em; color: var(--mid); }
+.row .chev { flex: none; width: 11px; height: 17px; fill: none; stroke: currentColor; stroke-width: 3; }
+.row.press .right { color: var(--shade); }
+@media (hover: hover) { .row:hover .right { color: var(--shade); } }
+.row.warn { background: var(--ink); color: var(--bg); }
+.thumb.icon { background: none; box-shadow: none; display: grid; place-items: center; }
+.thumb.icon svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.spacer { height: 14px; }
+/* historique : un intertitre par jour */
+.day { padding: 18px var(--pad) 6px; font-size: 14px; color: var(--mid); border-bottom: 3px solid var(--ink); }
+.day:first-child { padding-top: 12px; }
+/* fiche d'un morceau */
+.text { padding: 18px var(--pad) 16px; line-height: 1.35; border-bottom: 3px solid var(--ink); white-space: normal; }
+.text .song { font-size: calc(var(--row-font) + 3px); overflow-wrap: anywhere; }
+.text .artist { font-size: var(--row-font); margin-top: 4px; overflow-wrap: anywhere; }
+.text .when { font-size: 14px; color: var(--mid); margin-top: 10px; }
+.now .a { cursor: pointer; }
+/* message temporaire */
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom));
+  width: min(calc(100% - 32px), 560px); background: var(--ink); color: var(--bg);
+  padding: 14px 18px; border-radius: 12px; font-size: 16px; text-align: center; z-index: 20;
+}
+body.with-mini .toast { bottom: calc(86px + env(safe-area-inset-bottom)); }
 
 /* ---------- pochettes (niveaux de gris dans les teintes de l'écran) ---------- */
 .thumb {
@@ -206,6 +230,7 @@ img.gray { filter: grayscale(1) contrast(1.1); }
       <button type="button" class="state" id="state" aria-label="En lecture"></button>
     </header>
     <div class="content" id="listBox"><div class="empty">Chargement…</div></div>
+    <div class="content" id="pageBox" hidden></div>
     <div class="content" id="nowBox" hidden></div>
   </section>
   <aside class="pane side-pane" aria-label="En lecture">
@@ -214,6 +239,7 @@ img.gray { filter: grayscale(1) contrast(1.1); }
   </aside>
 </div>
 
+<div class="toast" id="toast" hidden></div>
 <nav class="mini" id="mini" hidden aria-label="Lecture en cours">
   <div class="mini-text"><div class="mini-t" id="miniT"></div><div class="mini-a" id="miniA"></div></div>
   <button type="button" data-c="prev" aria-label="Radio précédente"></button>
@@ -231,6 +257,8 @@ const ICON = {
   play: '<svg viewBox="0 0 24.35 25"><path d="M4.75 0.36L22.6 9.61A3.25 3.25 0 0 1 22.6 15.39L4.75 24.64A3.25 3.25 0 0 1 0 21.75L0 3.25A3.25 3.25 0 0 1 4.75 0.36Z"/></svg>',
   stop: '<svg viewBox="0 0 25 25"><path d="M3.95 0L21.05 0A3.95 3.95 0 0 1 25 3.95L25 21.05A3.95 3.95 0 0 1 21.05 25L3.95 25A3.95 3.95 0 0 1 0 21.05L0 3.95A3.95 3.95 0 0 1 3.95 0Z"/></svg>',
   spk: '<svg class="mark" viewBox="0 0 14 14"><path d="M1 5h3l4-4v12L4 9H1zM10 4.5a4 4 0 0 1 0 5l-1-1a2.6 2.6 0 0 0 0-3z"/></svg>',
+  chev: '<svg class="chev" viewBox="0 0 8 13"><path d="M1.5 1.5 6.5 6.5 1.5 11.5"/></svg>',
+  clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></svg>',
   spkHi: '<svg viewBox="0 0 16 14"><path d="M1 5h3l4-4v12L4 9H1zM10 4.2a4 4 0 0 1 0 5.6l-1-1a2.6 2.6 0 0 0 0-3.6zM12.3 2a7 7 0 0 1 0 10l-1-1a5.6 5.6 0 0 0 0-8z"/></svg>',
 };
 const $ = id => document.getElementById(id);
@@ -430,6 +458,7 @@ function pollTrack() {
         T.artist = useful ? (j.artist || '') : '';
         T.song = useful ? (j.song || t) : '';
         paint(); setMeta();
+        if (next) addHistory();
       }
     })
     .catch(() => { T.fails++; })
@@ -543,40 +572,84 @@ if ('mediaSession' in navigator) {
   set('previoustrack', () => step(-1));
 }
 
+/* ---------- Historique des morceaux (gardé sur l'appareil) ---------- */
+const HKEY = 'ondes.historique';
+const HMAX = 500;
+let hist = [];
+try { hist = JSON.parse(localStorage.getItem(HKEY)) || []; } catch (e) { hist = []; }
+function saveHist() { try { localStorage.setItem(HKEY, JSON.stringify(hist)); } catch (e) {} }
+/* Appelé quand la radio annonce un nouveau titre */
+function addHistory() {
+  const r = P.r;
+  if (!r || !T.title) return;
+  const last = hist[0];
+  // même titre, même radio, il y a moins de 30 min : c'est le même passage (rechargement du flux…)
+  if (last && last.title === T.title && last.url === r.url && Date.now() - last.t < 30 * 60 * 1000) return;
+  hist.unshift({ t: Date.now(), title: T.title, artist: T.artist, song: T.song, radio: r.name, url: r.url, logo: r.logo || '' });
+  if (hist.length > HMAX) hist.length = HMAX;
+  saveHist();
+  if (top().kind === 'history') render();
+  else if (top().kind === 'list') renderHistRow();
+}
+const p2 = n => String(n).padStart(2, '0');
+const hhmm = t => { const d = new Date(t); return `${p2(d.getHours())}:${p2(d.getMinutes())}`; };
+function dayLabel(t) {
+  const d = new Date(t), today = new Date();
+  const k = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((k(today) - k(d)) / 86400000);
+  if (diff === 0) return 'Aujourd’hui';
+  if (diff === 1) return 'Hier';
+  const s = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+const entryText = e => e.artist ? `${e.artist} — ${e.song}` : (e.song || e.title);
+
 /* ---------- Navigation ----------
-   petit écran : la liste, ou « En lecture » à sa place (flèche ↖ pour revenir)
-   grand écran (≥ 960 px, comme Ondes) : la liste à gauche, « En lecture » toujours à droite */
-let view = 'list';
-const listBox = $('listBox'), nowBox = $('nowBox'), sideBox = $('sideBox');
+   écrans empilés dans la colonne principale : liste des radios › historique › morceau,
+   et « En lecture » sur petit écran (sur grand écran, il reste à droite, comme sur Ondes) */
+const listBox = $('listBox'), pageBox = $('pageBox'), nowBox = $('nowBox'), sideBox = $('sideBox');
 const backBtn = $('back'), titleEl = $('title'), stateBtn = $('state'), mini = $('mini');
 const wideMQ = matchMedia('(min-width: 960px)');
 const wide = () => wideMQ.matches;
-let listScroll = 0;
+const stack = [{ kind: 'list' }];
+const top = () => stack[stack.length - 1];
+let view = 'list';                       // gardé pour la reconnexion et l'affichage
 
-function show(v) {
-  if (v === 'now' && view !== 'now') listScroll = listBox.scrollTop;
-  view = v;
-  const now = v === 'now' && !wide();
-  listBox.hidden = now;
-  nowBox.hidden = !now;
-  if (now) nowBox.scrollTop = 0; else listBox.scrollTop = listScroll;
+function push(s) {
+  top().scroll = (top().kind === 'list' ? listBox : pageBox).scrollTop;
+  stack.push(s);
+  history.pushState({ d: stack.length }, '');
+  render(true);
+}
+function goBack() { if (stack.length > 1) history.back(); }
+window.addEventListener('popstate', () => { if (stack.length > 1) { stack.pop(); render(false); } });
+function openNow() {
+  if (wide() || !P.r || top().kind === 'now') return;
+  push({ kind: 'now' });
+}
+function onWide() { if (wide() && top().kind === 'now') history.back(); else render(false); }
+wideMQ.addEventListener ? wideMQ.addEventListener('change', onWide) : wideMQ.addListener(onWide);
+
+const TITLES = { list: 'Ondes', history: 'Historique', track: 'Morceau', now: 'En lecture' };
+function render(fresh) {
+  const s = top();
+  view = s.kind === 'now' ? 'now' : 'list';
+  listBox.hidden = s.kind !== 'list';
+  nowBox.hidden = s.kind !== 'now';
+  pageBox.hidden = s.kind !== 'history' && s.kind !== 'track';
+  if (s.kind === 'history') renderHistory();
+  else if (s.kind === 'track') renderTrack(s.e);
+  else if (s.kind === 'list') renderHistRow();
+  const box = s.kind === 'list' ? listBox : s.kind === 'now' ? nowBox : pageBox;
+  box.scrollTop = fresh ? 0 : (s.scroll || 0);
   paint();
 }
-function openNow() {
-  if (wide() || !P.r || view === 'now') return;
-  history.pushState({ v: 'now' }, '');
-  show('now');
-}
-function goBack() { if (view === 'now') history.back(); }
-window.addEventListener('popstate', () => { if (view === 'now') show('list'); });
-function onWide() { if (wide() && view === 'now') history.back(); else show(view); }
-wideMQ.addEventListener ? wideMQ.addEventListener('change', onWide) : wideMQ.addListener(onWide);
 
 /* Glisser depuis le bord gauche = retour (pratique en mode app sur iPhone) */
 let edge = null;
 document.addEventListener('touchstart', e => {
   const t = e.touches[0];
-  edge = view === 'now' && t.clientX < 28 ? { x: t.clientX, y: t.clientY } : null;
+  edge = stack.length > 1 && t.clientX < 28 ? { x: t.clientX, y: t.clientY } : null;
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (!edge) return;
@@ -595,35 +668,130 @@ function bindPress(node, onTap) {
   node.addEventListener('click', onTap);
   node.addEventListener('contextmenu', e => e.preventDefault());
 }
+/* Une ligne de liste façon Ondes : [vignette] libellé / sous-titre  [texte à droite] [chevron] */
+function row(label, o = {}) {
+  const r = el('div', 'row' + (o.cls ? ' ' + o.cls : ''));
+  if (o.thumb !== undefined) {
+    const th = el('span', 'thumb' + (o.icon ? ' icon' : ''));
+    if (o.icon) th.innerHTML = o.icon; else fillCover(th, o.thumb, 44);
+    r.append(th);
+  }
+  const lbl = el('span', 'lbl');
+  lbl.append(el('span', 'label', label));
+  if (o.sub) lbl.append(el('span', 'sub', o.sub));
+  r.append(lbl);
+  if (o.right) r.append(el('span', 'right', o.right));
+  if (o.chev) r.insertAdjacentHTML('beforeend', ICON.chev);
+  if (o.tap) bindPress(r, o.tap);
+  return r;
+}
+let toastT;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2200);
+}
 
-/* ---------- Liste ---------- */
-let rows = [];
+/* ---------- Liste des radios ---------- */
+let rows = [], histRow = null, thumbsOn = false;
 function renderList() {
   rows = [];
   if (!radios.length) { listBox.replaceChildren(el('div', 'empty', 'Aucune radio pour le moment')); paint(); return; }
-  const thumbs = radios.some(r => r.logo);
+  thumbsOn = radios.some(r => r.logo);
   const frag = document.createDocumentFragment();
+  histRow = el('div'); frag.append(histRow);
   radios.forEach(r => {
-    const row = el('div', 'row');
-    let th = null;
-    if (thumbs) { th = el('span', 'thumb'); row.append(th); }
-    const lbl = el('span', 'lbl');
-    lbl.append(el('span', 'label', r.name));
-    const sub = subline(r);
-    if (sub) lbl.append(el('span', 'sub', sub));
-    const mark = el('span');
-    row.append(lbl, mark);
-    bindPress(row, () => {
-      const same = P.r && P.r.url === r.url;
-      if (!same || !isOn()) play(r);   // la radio en cours continue, les autres démarrent
-      openNow();
+    const rw = row(r.name, {
+      thumb: thumbsOn ? (r.logo || '') : undefined,
+      sub: subline(r),
+      tap: () => {
+        const same = P.r && P.r.url === r.url;
+        if (!same || !isOn()) play(r);   // la radio en cours continue, les autres démarrent
+        openNow();
+      },
     });
-    frag.append(row);
-    rows.push({ r, row, mark });
-    if (th) fillCover(th, r.logo, 44);
+    const mark = el('span');
+    rw.append(mark);
+    frag.append(rw);
+    rows.push({ r, row: rw, mark });
   });
   listBox.replaceChildren(frag);
+  renderHistRow();
   paint();
+}
+function renderHistRow() {
+  if (!histRow) return;
+  const n = hist.length;
+  const r = row('Historique', {
+    thumb: thumbsOn ? '' : undefined, icon: thumbsOn ? ICON.clock : null,
+    right: n ? `${n} titre${n > 1 ? 's' : ''}` : '', chev: true,
+    tap: () => push({ kind: 'history' }),
+  });
+  histRow.replaceWith(r); histRow = r;
+}
+
+/* ---------- Historique ---------- */
+let clearArmed = false, clearT;
+function renderHistory() {
+  const frag = document.createDocumentFragment();
+  if (!hist.length) {
+    frag.append(el('div', 'empty', 'Aucun morceau pour l’instant.\nLes titres annoncés par les radios s’ajoutent ici pendant l’écoute, avec l’heure et la radio.'));
+  }
+  let day = '';
+  hist.forEach(e => {
+    const d = dayLabel(e.t);
+    if (d !== day) { day = d; frag.append(el('div', 'day', d)); }
+    // le morceau en grand ; dessous l'heure, la radio, puis l'artiste
+    frag.append(row(e.song || e.title, {
+      thumb: e.logo || '', sub: [hhmm(e.t), e.radio, e.artist].filter(Boolean).join(' · '), chev: true,
+      tap: () => push({ kind: 'track', e }),
+    }));
+  });
+  if (hist.length) {
+    frag.append(el('div', 'spacer'));
+    frag.append(row(clearArmed ? 'Toucher encore pour tout effacer' : 'Effacer l’historique', {
+      cls: clearArmed ? 'warn' : '',
+      tap: () => {
+        if (!clearArmed) {
+          clearArmed = true; renderHistory();
+          clearTimeout(clearT); clearT = setTimeout(() => { clearArmed = false; if (top().kind === 'history') renderHistory(); }, 3000);
+          return;
+        }
+        clearArmed = false; hist = []; saveHist(); toast('Historique effacé'); renderHistory();
+      },
+    }));
+  }
+  pageBox.replaceChildren(frag);
+}
+
+/* ---------- Fiche d'un morceau ---------- */
+function renderTrack(e) {
+  const q = encodeURIComponent(e.artist ? `${e.artist} ${e.song}` : (e.song || e.title));
+  const when = new Date(e.t).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const head = el('div', 'text');
+  head.append(el('div', 'song', e.song || e.title));
+  if (e.artist) head.append(el('div', 'artist', e.artist));
+  head.append(el('div', 'when', `${e.radio} · ${when} à ${hhmm(e.t)}`));
+  const open = url => () => window.open(url, '_blank', 'noopener');
+  const radio = radios.find(r => r.url === e.url);
+  const frag = document.createDocumentFragment();
+  frag.append(head,
+    row('Chercher sur Spotify', { chev: true, tap: open('https://open.spotify.com/search/' + q) }),
+    row('Chercher sur Apple Music', { chev: true, tap: open('https://music.apple.com/fr/search?term=' + q) }),
+    row('Chercher sur Bandcamp', { chev: true, tap: open('https://bandcamp.com/search?q=' + q) }),
+    row('Chercher sur YouTube', { chev: true, tap: open('https://www.youtube.com/results?search_query=' + q) }),
+    row(navigator.share ? 'Partager…' : 'Copier le titre', { tap: () => {
+      const text = entryText(e);
+      if (navigator.share) navigator.share({ text: `${text} (sur ${e.radio})` }).catch(() => {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('Titre copié'), () => toast('Copie impossible'));
+    } }),
+    radio ? row(`Écouter ${radio.name}`, { tap: () => { play(radio); openNow(); } }) : el('span'),
+    el('div', 'spacer'),
+    row('Retirer de l’historique', { tap: () => {
+      hist = hist.filter(x => !(x.t === e.t && x.title === e.title)); saveHist(); toast('Retiré'); goBack();
+    } }),
+  );
+  pageBox.replaceChildren(frag);
 }
 
 /* ---------- En lecture (même composition que la page d'Ondes) ---------- */
@@ -648,6 +816,11 @@ function makeNow(container) {
     prev: q('[data-c=prev]'), mid: q('[data-c=play]'), next: q('[data-c=next]'), shown: null,
   };
   q('.ctrls').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !b.disabled) transport(b.dataset.c); });
+  // un appui sur le morceau ouvre sa fiche (recherche Spotify, Apple Music…)
+  v.a.addEventListener('click', () => {
+    const e = hist.find(x => P.r && x.url === P.r.url && x.title === T.title);
+    if (e) push({ kind: 'track', e });
+  });
   return v;
 }
 const nowViews = [makeNow(nowBox), makeNow(sideBox)];
@@ -706,7 +879,7 @@ mini.addEventListener('click', e => {
 });
 function updateMini() {
   const r = P.r, s = P.state;
-  const visible = !!r && !wide() && view === 'list';
+  const visible = !!r && !wide() && top().kind !== 'now';
   mini.hidden = !visible;
   document.body.classList.toggle('with-mini', visible);
   if (!visible) return;
@@ -720,15 +893,15 @@ function updateMini() {
 
 function paint() {
   const r = P.r, s = P.state, on = isOn();
-  for (const { r: x, row, mark } of rows) {
+  for (const { r: x, row: rw, mark } of rows) {
     const cur = !!r && r.url === x.url && on;
-    row.classList.toggle('busy', cur && isBusy(s));
+    rw.classList.toggle('busy', cur && isBusy(s));
     if (cur !== (mark.dataset.on === '1')) { mark.dataset.on = cur ? '1' : ''; mark.innerHTML = cur ? ICON.spk : ''; }
   }
-  const nowNarrow = view === 'now' && !wide();
-  titleEl.textContent = nowNarrow ? 'En lecture' : 'Ondes';
-  backBtn.classList.toggle('off', !nowNarrow);
-  const st = !!r && !wide() && view === 'list';
+  const k = top().kind;
+  titleEl.textContent = TITLES[k] || 'Ondes';
+  backBtn.classList.toggle('off', stack.length < 2);
+  const st = !!r && !wide() && k !== 'now';
   stateBtn.innerHTML = st ? ICON.spkHi : '';
   stateBtn.disabled = !st;
   nowViews.forEach(updateNow);
@@ -737,8 +910,7 @@ function paint() {
 }
 const fmt = ms => {
   const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, ss = s % 60;
-  const p = n => String(n).padStart(2, '0');
-  return h ? `${h}:${p(m)}:${p(ss)}` : `${m}:${p(ss)}`;
+  return h ? `${h}:${p2(m)}:${p2(ss)}` : `${m}:${p2(ss)}`;
 };
 setInterval(() => {
   if (!P.r || P.state !== 'playing') return;
@@ -761,7 +933,8 @@ document.addEventListener('keydown', e => {
 /* Liste à jour quand on revient sur l'app (si tu as modifié radios.json entre-temps) */
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !isOn()) loadRadios(); });
 
-history.replaceState({ v: 'list' }, '');
+history.replaceState({ d: 1 }, '');
+render(true);
 loadRadios();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
