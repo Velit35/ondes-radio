@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Ondes">
-<title>Ondes Radio</title>
+<title>Ondes</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
@@ -779,6 +779,7 @@ function renderTrack(e) {
   frag.append(head,
     row('Chercher sur Spotify', { chev: true, tap: open('https://open.spotify.com/search/' + q) }),
     row('Chercher sur Apple Music', { chev: true, tap: open('https://music.apple.com/fr/search?term=' + q) }),
+    row('Chercher sur Deezer', { chev: true, tap: open('https://www.deezer.com/fr/search/' + q) }),
     row('Chercher sur Bandcamp', { chev: true, tap: open('https://bandcamp.com/search?q=' + q) }),
     row('Chercher sur YouTube', { chev: true, tap: open('https://www.youtube.com/results?search_query=' + q) }),
     row(navigator.share ? 'Partager…' : 'Copier le titre', { tap: () => {
