@@ -148,9 +148,21 @@ img.gray { filter: grayscale(1) contrast(1.1); }
 .now .a { font-size: clamp(18px, 4.4vw, 24px); line-height: 1.25; max-height: 2.5em; overflow: hidden; overflow-wrap: anywhere; }
 .now .al { font-size: clamp(15px, 3.6vw, 18px); color: var(--mid); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .now .a:empty, .now .al:empty, .now .kind:empty { display: none; }
-.live { text-align: center; font-size: 15px; color: var(--mid); min-height: 49px; padding-top: 12px; font-variant-numeric: tabular-nums; }
-.live .why { font-size: 13px; line-height: 1.4; margin-top: 6px; }
-.live.busy .st { animation: blink 1s steps(2, start) infinite; }
+/* barre du direct : pilule noire pleine pendant l'écoute, hachures qui défilent pendant la connexion
+   (même dessin que la barre d'avancement d'Ondes) */
+.progwrap { padding-top: 12px; }
+.prog { height: 22px; border: 3px solid var(--ink); padding: 3px; border-radius: 99px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--ink); }
+.progwrap.playing .prog i { width: 100%; }
+.progwrap.busy .prog i {
+  width: 100%; background: repeating-linear-gradient(-45deg, var(--ink) 0 5px, transparent 5px 10px);
+  background-size: 14.14px 100%; animation: barber .7s linear infinite;
+}
+@keyframes barber { to { background-position: 14.14px 0; } }
+.times { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.times .st { text-align: right; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.why { text-align: center; font-size: 13px; color: var(--mid); line-height: 1.4; margin-top: 8px; }
+.why:empty { display: none; }
 
 .ctrls { display: flex; justify-content: space-around; align-items: center; margin-top: 22px; }
 .ctrls button { width: 33%; height: 68px; display: grid; place-items: center; border-radius: 10px; }
@@ -621,7 +633,7 @@ function makeNow(container) {
     <div class="coverwrap"><div class="cover"><span class="ph">${ICON.spkHi}</span></div></div>
     <div class="side">
       <div class="meta"><i class="gap"></i><div class="kind"></div><div class="t"><span></span></div><div class="a"></div><div class="al"></div><i class="gap end"></i></div>
-      <div class="live"><div class="st"></div><div class="why"></div></div>
+      <div class="progwrap"><div class="prog"><i></i></div><div class="times"><span class="el"></span><span class="st"></span></div><div class="why"></div></div>
       <div class="ctrls">
         <button type="button" data-c="prev" aria-label="Radio précédente">${ICON.prev}</button>
         <button type="button" data-c="play" aria-label="Lecture"></button>
@@ -632,7 +644,7 @@ function makeNow(container) {
   const q = s => n.querySelector(s);
   const v = {
     cover: q('.cover'), kind: q('.kind'), t: q('.t'), ts: q('.t span'), a: q('.a'), al: q('.al'),
-    live: q('.live'), st: q('.live .st'), why: q('.live .why'),
+    pw: q('.progwrap'), el: q('.times .el'), st: q('.times .st'), why: q('.why'),
     prev: q('[data-c=prev]'), mid: q('[data-c=play]'), next: q('[data-c=next]'), shown: null,
   };
   q('.ctrls').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !b.disabled) transport(b.dataset.c); });
@@ -676,9 +688,9 @@ function updateNow(v) {
   v.a.textContent = r ? songText() : '';
   v.al.textContent = r ? [place(r), quality(r)].filter(Boolean).join(' · ') : '';
   fillCover(v.cover, r && r.logo, 300);
-  v.live.hidden = !r;
-  v.live.classList.toggle('busy', isBusy(s) || s === 'offline');
-  if (r) { v.st.textContent = liveText(s); v.why.textContent = causeText(r, s); }
+  v.pw.hidden = !r;
+  v.pw.className = 'progwrap' + (s === 'playing' ? ' playing' : (isBusy(s) || s === 'offline') ? ' busy' : '');
+  if (r) { v.el.textContent = fmt(elapsed()); v.st.textContent = label(s); v.why.textContent = causeText(r, s); }
   const icon = on ? 'stop' : 'play';
   if (v.mid.dataset.icon !== icon) { v.mid.dataset.icon = icon; v.mid.innerHTML = ICON[icon]; }
   v.mid.setAttribute('aria-label', on ? 'Arrêter' : 'Lecture');
@@ -730,7 +742,7 @@ const fmt = ms => {
 };
 setInterval(() => {
   if (!P.r || P.state !== 'playing') return;
-  nowViews.forEach(v => { v.st.textContent = liveText(P.state); });
+  nowViews.forEach(v => { v.el.textContent = fmt(elapsed()); });
   if (!mini.hidden && !T.title) $('miniA').textContent = liveText(P.state);
 }, 1000);
 
