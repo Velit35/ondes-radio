@@ -1,1 +1,239 @@
+# Ondes Radio · vérification automatique des radios
+#
+# Chaque nuit, et à chaque modification de radios.json :
+# - teste chaque flux comme le ferait un iPhone ;
+# - complète le format et le débit qui manquent dans radios.json ;
+# - ouvre un ticket « Radios à vérifier » s'il y a un problème (tu reçois un e-mail),
+#   et le ferme tout seul quand tout remarche.
+# Le rapport complet est aussi visible dans l'onglet Actions.
+
+name: Vérifier les radios
+
+on:
+  schedule:
+    - cron: "17 3 * * *"        # chaque nuit vers 4 h (heure de Paris)
+  push:
+    paths: ["radios.json"]
+  workflow_dispatch:             # bouton « Run workflow » pour lancer à la main
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: verifier-radios
+  cancel-in-progress: false
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tester chaque radio
+        run: |
+          cat > "$RUNNER_TEMP/verifier.py" <<'PY'
+          """Vérification des radios d'Ondes Radio.
+
+          Teste chaque flux de radios.json comme le ferait un iPhone, complète le format et le débit
+          quand ils manquent, et écrit un rapport (rapport.md) + la liste des problèmes (problemes.txt).
+          Aucune bibliothèque à installer : Python standard uniquement.
+          """
+          import http.client
+          import json
+          import os
+          import ssl
+          import sys
+          import urllib.parse
+
+          LISTE = sys.argv[1] if len(sys.argv) > 1 else "radios.json"
+          TIMEOUT = 10
+          AGENT_IPHONE = "AppleCoreMedia/1.0.0.21A329 (iPhone; U; CPU OS 17_0 like Mac OS X; fr_fr)"
+          CODECS = {"audio/aac": "AAC", "audio/aacp": "AAC", "audio/x-aac": "AAC", "audio/mp4": "AAC",
+                    "audio/mpeg": "MP3", "audio/mp3": "MP3", "audio/ogg": "Ogg", "application/ogg": "Ogg",
+                    "audio/flac": "FLAC", "audio/x-flac": "FLAC", "audio/opus": "Opus", "audio/webm": "Opus"}
+          ILLISIBLES_IPHONE = {"Ogg", "Vorbis", "Opus", "MP2"}
+
+
+          def ouvrir(url, sauts=0):
+              """GET du flux, en suivant les redirections ; renvoie (réponse, connexion, adresse finale)."""
+              u = urllib.parse.urlsplit(url)
+              if u.scheme not in ("http", "https"):
+                  raise ValueError("adresse invalide")
+              cls = http.client.HTTPSConnection if u.scheme == "https" else http.client.HTTPConnection
+              kw = {"timeout": TIMEOUT}
+              if u.scheme == "https":
+                  kw["context"] = ssl.create_default_context()
+              conn = cls(u.hostname, u.port, **kw)
+              chemin = (u.path or "/") + ("?" + u.query if u.query else "")
+              conn.request("GET", chemin, headers={"User-Agent": AGENT_IPHONE, "Icy-MetaData": "1", "Accept": "*/*"})
+              rep = conn.getresponse()
+              if rep.status in (301, 302, 303, 307, 308) and rep.getheader("Location") and sauts < 5:
+                  suivant = urllib.parse.urljoin(url, rep.getheader("Location"))
+                  conn.close()
+                  return ouvrir(suivant, sauts + 1)
+              return rep, conn, url
+
+
+          def format_du_son(debut):
+              """Reconnaît le format aux premiers octets du son."""
+              if debut.startswith(b"OggS"):
+                  return "Opus" if b"OpusHead" in debut[:200] else "Ogg"
+              if debut.startswith(b"fLaC"):
+                  return "FLAC"
+              if debut[4:8] == b"ftyp":
+                  return "AAC"
+              for i in range(min(len(debut) - 4, 4096)):
+                  if debut[i] == 0xFF:
+                      b1 = debut[i + 1]
+                      if b1 & 0xF6 == 0xF0:                # ADTS : AAC
+                          return "AAC"
+                      if b1 & 0xE0 == 0xE0:                # trame MPEG audio
+                          couche = (b1 >> 1) & 3
+                          if couche == 1:
+                              return "MP3"
+                          if couche == 2:
+                              return "MP2"
+              return ""
+
+
+          def verifier(r):
+              url = r.get("url", "").strip()
+              res = {"name": r.get("name") or url, "url": url, "ok": False, "codec": "", "bitrate": 0,
+                     "titres": False, "alertes": [], "erreur": ""}
+              if url.startswith("http://"):
+                  res["alertes"].append("adresse en http : le navigateur risque de la bloquer (page en https)")
+              try:
+                  rep, conn, finale = ouvrir(url)
+              except Exception as e:  # noqa: BLE001
+                  res["erreur"] = f"injoignable ({type(e).__name__})"
+                  return res
+              try:
+                  if rep.status >= 400:
+                      res["erreur"] = f"le serveur répond « erreur {rep.status} »"
+                      return res
+                  ctype = (rep.getheader("Content-Type") or "").split(";")[0].strip().lower()
+                  if ctype.startswith("text/html"):
+                      res["erreur"] = "c'est une page web, pas un flux audio"
+                      return res
+                  if ctype in ("audio/x-mpegurl", "application/vnd.apple.mpegurl", "audio/mpegurl", "application/x-mpegurl"):
+                      res["ok"], res["codec"] = True, "HLS"
+                      return res
+                  if ctype in ("audio/x-scpls", "audio/scpls"):
+                      res["erreur"] = "c'est une liste .pls : il faut l'adresse du flux qu'elle contient"
+                      return res
+                  res["titres"] = bool(rep.getheader("icy-metaint"))
+                  br = rep.getheader("icy-br") or ""
+                  if not br:
+                      info = rep.getheader("ice-audio-info") or ""
+                      for part in info.split(";"):
+                          k, _, v = part.partition("=")
+                          if k.strip().lower() in ("bitrate", "ice-bitrate"):
+                              br = v
+                  try:
+                      res["bitrate"] = int(br.split(",")[0].strip()) if br else 0
+                  except ValueError:
+                      res["bitrate"] = 0
+                  try:
+                      debut = rep.read(8192) if not res["titres"] else rep.read(min(8192, int(rep.getheader("icy-metaint"))))
+                  except Exception:  # noqa: BLE001
+                      debut = b""
+                  if not debut:
+                      res["erreur"] = "le serveur répond mais n'envoie pas de son"
+                      return res
+                  res["codec"] = format_du_son(debut) or CODECS.get(ctype, "")
+                  res["ok"] = True
+                  if res["codec"] in ILLISIBLES_IPHONE:
+                      res["alertes"].append(f"format {res['codec']} : l'iPhone ne sait pas le lire")
+                  if (rep.getheader("Transfer-Encoding") or "").lower() == "chunked" and ctype.startswith("audio/"):
+                      res["alertes"].append("flux envoyé « en morceaux » : l'iPhone peut le refuser (cf. Mad Radio) — chercher une adresse avec un numéro de port")
+                  if not ctype.startswith("audio/") and ctype not in ("application/ogg", "application/octet-stream", ""):
+                      res["alertes"].append(f"type annoncé inhabituel ({ctype})")
+                  if finale != url and url.startswith("https://") and finale.startswith("http://"):
+                      res["alertes"].append("redirige vers une adresse en http : le navigateur risque de la bloquer")
+                  return res
+              finally:
+                  conn.close()
+
+
+          def main():
+              with open(LISTE, encoding="utf-8") as f:
+                  data = json.load(f)
+              radios = data["radios"] if isinstance(data, dict) else data
+              resultats, change = [], False
+              for r in radios:
+                  res = verifier(r)
+                  logo = (r.get("logo") or "").strip()
+                  if logo and not os.path.isfile(logo):
+                      res["alertes"].append(f"logo introuvable : {logo}")
+                  resultats.append(res)
+                  # complète le format et le débit quand ils manquent (sans jamais écraser ce que tu as mis)
+                  if res["ok"]:
+                      if res["codec"] and not r.get("codec"):
+                          r["codec"] = res["codec"]; change = True
+                      if res["bitrate"] and not r.get("bitrate"):
+                          r["bitrate"] = res["bitrate"]; change = True
+
+              if change:
+                  with open(LISTE, "w", encoding="utf-8") as f:
+                      json.dump(data, f, ensure_ascii=False, indent=2)
+                      f.write("\n")
+
+              ko = [x for x in resultats if not x["ok"]]
+              alerte = [x for x in resultats if x["ok"] and x["alertes"]]
+              lignes = [f"**{len(resultats) - len(ko)} radios sur {len(resultats)} répondent.**", ""]
+              if ko:
+                  lignes += ["### Ne fonctionnent pas", ""]
+                  lignes += [f"- **{x['name']}** : {x['erreur']}  \n  `{x['url']}`" for x in ko] + [""]
+              if alerte:
+                  lignes += ["### À surveiller", ""]
+                  lignes += [f"- **{x['name']}** : " + " ; ".join(x["alertes"]) for x in alerte] + [""]
+              lignes += ["### Toutes les radios", "", "| Radio | État | Format | Débit | Titres en direct |", "|---|---|---|---|---|"]
+              for x in resultats:
+                  etat = "✅" if x["ok"] and not x["alertes"] else ("⚠️" if x["ok"] else "❌")
+                  lignes.append(f"| {x['name']} | {etat} | {x['codec'] or '?'} | {str(x['bitrate']) + ' kbit/s' if x['bitrate'] else '?'} | {'oui' if x['titres'] else 'non'} |")
+              if change:
+                  lignes += ["", "_Format et débit manquants complétés dans radios.json._"]
+              with open("rapport.md", "w", encoding="utf-8") as f:
+                  f.write("\n".join(lignes) + "\n")
+              with open("problemes.txt", "w", encoding="utf-8") as f:
+                  f.write(str(len(ko) + len(alerte)))
+              print("\n".join(lignes))
+
+
+          if __name__ == "__main__":
+              main()
+          PY
+          python3 "$RUNNER_TEMP/verifier.py" radios.json
+          cat rapport.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enregistrer le format et le débit complétés
+        run: |
+          if ! git diff --quiet -- radios.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add radios.json
+            git commit -m "Format et débit des radios complétés automatiquement"
+            git push
+          fi
+
+      - name: Prévenir s'il y a un problème
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          n=$(cat problemes.txt)
+          titre="Radios à vérifier"
+          num=$(gh issue list --state open --search "$titre in:title" --json number,title \
+                --jq "map(select(.title == \"$titre\")) | .[0].number // empty")
+          if [ "$n" -gt 0 ]; then
+            if [ -z "$num" ]; then
+              gh issue create --title "$titre" --body-file rapport.md
+            elif [ "$(gh issue view "$num" --json body --jq .body)" != "$(cat rapport.md)" ]; then
+              gh issue edit "$num" --body-file rapport.md
+              gh issue comment "$num" --body "Le rapport a changé : voir la description du ticket."
+            fi
+          elif [ -n "$num" ]; then
+            gh issue close "$num" --comment "Toutes les radios répondent à nouveau ✅"
+          fi
 
