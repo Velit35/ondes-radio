@@ -82,7 +82,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* flèche « retour » ↖ : même dessin que l'écran d'Ondes */
 /* flèche ↖ (un cran en arrière) et trois barres (retour au menu de départ) : mêmes dessins qu'Ondes */
 .nav { display: flex; height: 100%; }
-.nav.off { visibility: hidden; }
+.nav.off, .home.off { visibility: hidden; }
 .back, .home { flex: none; height: 100%; display: grid; place-items: center start; }
 .back { padding: 0 0 0 calc((var(--bar-h) - 26.1px) / 2); }
 .home { padding: 0 0 0 12.5px; width: calc(21px + 12.5px + 10px); }
@@ -915,6 +915,7 @@ function paint() {
   const k = top().kind;
   titleEl.textContent = TITLES[k] || 'Ondes';
   $('nav').classList.toggle('off', stack.length < 2);
+  $('home').classList.toggle('off', k !== 'track');   // trois barres : seulement sur la fiche d'un morceau
   const st = !!r && !wide() && k !== 'now';
   stateBtn.innerHTML = st ? ICON.spkHi : '';
   stateBtn.disabled = !st;
