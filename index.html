@@ -70,7 +70,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* ---------- barre de titre ---------- */
 .bar {
   flex: none; height: var(--bar-h);
-  display: grid; grid-template-columns: var(--bar-h) 1fr var(--bar-h); align-items: center;
+  /* colonnes de gauche (flèche + trois barres) et de droite de même largeur : titre centré (comme Ondes) */
+  --nav-w: calc((var(--bar-h) - 26.1px) / 2 + 21px + 12.5px + 21px + 8px);
+  display: grid; grid-template-columns: var(--nav-w) 1fr var(--nav-w); align-items: center;
   border-bottom: 3px solid var(--ink);
 }
 .bar h1, .bar h2 {
@@ -78,9 +80,14 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* flèche « retour » ↖ : même dessin que l'écran d'Ondes */
-.back { height: 100%; display: grid; place-items: center start; padding: 0 0 0 calc((var(--bar-h) - 26.1px) / 2); }
-.back.off { visibility: hidden; }
-.back svg { width: 21px; height: 21px; display: block; fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; }
+/* flèche ↖ (un cran en arrière) et trois barres (retour au menu de départ) : mêmes dessins qu'Ondes */
+.nav { display: flex; height: 100%; }
+.nav.off { visibility: hidden; }
+.back, .home { flex: none; height: 100%; display: grid; place-items: center start; }
+.back { padding: 0 0 0 calc((var(--bar-h) - 26.1px) / 2); }
+.home { padding: 0 0 0 12.5px; width: calc(21px + 12.5px + 10px); }
+.back svg, .home svg { width: 21px; height: 21px; display: block; fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; }
+.bar > .state { justify-self: end; width: var(--bar-h); }
 .state { display: grid; place-items: center; height: 100%; }
 .state svg { width: 21px; height: 21px; fill: var(--ink); }
 
@@ -226,7 +233,7 @@ img.gray { filter: grayscale(1) contrast(1.1); }
 <div class="app">
   <section class="pane main-pane">
     <header class="bar">
-      <button class="back off" id="back" aria-label="Retour"><svg viewBox="0 0 25 25"><path d="M22.81 2.19L2.19 2.19L2.19 22.81" stroke-width="4.38"/><path d="M2.79 2.79L21.48 21.48" stroke-width="5.45"/></svg></button>
+      <span class="nav off" id="nav"><button class="back" id="back" aria-label="Retour"><svg viewBox="0 0 25 25"><path d="M22.81 2.19L2.19 2.19L2.19 22.81" stroke-width="4.38"/><path d="M2.79 2.79L21.48 21.48" stroke-width="5.45"/></svg></button><button class="home" id="home" aria-label="Menu de départ"><svg viewBox="0 0 25 25"><path d="M2.19 2.19L22.81 2.19" stroke-width="4.38"/><path d="M2.19 12.5L22.81 12.5" stroke-width="4.38"/><path d="M2.19 22.81L22.81 22.81" stroke-width="4.38"/></svg></button></span>
       <h1 id="title">Ondes</h1>
       <button type="button" class="state" id="state" aria-label="En lecture"></button>
     </header>
@@ -623,7 +630,12 @@ function push(s) {
   render(true);
 }
 function goBack() { if (stack.length > 1) history.back(); }
-window.addEventListener('popstate', () => { if (stack.length > 1) { stack.pop(); render(false); } });
+window.addEventListener('popstate', e => {
+  // la profondeur enregistrée dit combien d'écrans garder (un cran, ou tout d'un coup pour le menu de départ)
+  const d = Math.max(1, (e.state && e.state.d) || 1);
+  if (d < stack.length) { stack.length = d; render(false); }
+});
+function goHome() { if (stack.length > 1) history.go(-(stack.length - 1)); }
 function openNow() {
   if (wide() || !P.r || top().kind === 'now') return;
   push({ kind: 'now' });
@@ -902,7 +914,7 @@ function paint() {
   }
   const k = top().kind;
   titleEl.textContent = TITLES[k] || 'Ondes';
-  backBtn.classList.toggle('off', stack.length < 2);
+  $('nav').classList.toggle('off', stack.length < 2);
   const st = !!r && !wide() && k !== 'now';
   stateBtn.innerHTML = st ? ICON.spkHi : '';
   stateBtn.disabled = !st;
@@ -921,6 +933,7 @@ setInterval(() => {
 }, 1000);
 
 bindPress(backBtn, goBack);
+bindPress($('home'), goHome);
 stateBtn.addEventListener('click', openNow);
 
 /* Clavier (ordinateur) : espace = lecture/arrêt, flèches = radio précédente/suivante, Échap = retour */
