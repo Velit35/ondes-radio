@@ -88,6 +88,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .home { padding: 0 0 0 12.5px; width: calc(21px + 12.5px + 10px); }
 .back svg, .home svg { width: 21px; height: 21px; display: block; fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; }
 .bar > .state { justify-self: end; width: var(--bar-h); }
+.bar > .state.on { width: auto; padding-right: calc((var(--bar-h) - 26.1px) / 2); }
 .state { display: grid; place-items: center; height: 100%; }
 .state svg { width: 21px; height: 21px; fill: var(--ink); }
 
@@ -103,8 +104,11 @@ body.with-mini #listBox, body.with-mini #pageBox { padding-bottom: 76px; }
 .row .lbl { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .row .label, .row .sub { overflow: hidden; text-overflow: ellipsis; }
 .row .sub { font-size: 13px; color: var(--mid); }
-.row .mark { flex: none; width: 18px; height: 18px; fill: currentColor; }
-.row.busy .mark { animation: blink 1s steps(2, start) infinite; }
+/* « ● ON AIR » : signale la radio qui joue (le point clignote ; en connexion, il n'est que cerclé) */
+.onair { flex: none; display: inline-flex; align-items: center; gap: 7px; font-size: 13px; letter-spacing: .08em; white-space: nowrap; }
+.onair i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: currentColor; animation: blink 1.2s steps(2, start) infinite; }
+.row.busy .onair i, .state.busy .onair i { background: none; box-shadow: inset 0 0 0 2px currentColor; animation-duration: .5s; }
+@media (prefers-reduced-motion: reduce) { .onair i { animation: none; } }
 @keyframes blink { to { visibility: hidden; } }
 .row.press { background: var(--ink); color: var(--bg); }
 .row.press .sub { color: var(--shade); }
@@ -269,6 +273,7 @@ const ICON = {
   clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></svg>',
   spkHi: '<svg viewBox="0 0 16 14"><path d="M1 5h3l4-4v12L4 9H1zM10 4.2a4 4 0 0 1 0 5.6l-1-1a2.6 2.6 0 0 0 0-3.6zM12.3 2a7 7 0 0 1 0 10l-1-1a5.6 5.6 0 0 0 0-8z"/></svg>',
 };
+const ONAIR = '<span class="onair"><i></i>ON AIR</span>';
 const $ = id => document.getElementById(id);
 const absUrl = u => new URL(u, location.href).href;
 function el(tag, cls, text) {
@@ -910,14 +915,16 @@ function paint() {
   for (const { r: x, row: rw, mark } of rows) {
     const cur = !!r && r.url === x.url && on;
     rw.classList.toggle('busy', cur && isBusy(s));
-    if (cur !== (mark.dataset.on === '1')) { mark.dataset.on = cur ? '1' : ''; mark.innerHTML = cur ? ICON.spk : ''; }
+    if (cur !== (mark.dataset.on === '1')) { mark.dataset.on = cur ? '1' : ''; mark.innerHTML = cur ? ONAIR : ''; }
   }
   const k = top().kind;
   titleEl.textContent = TITLES[k] || 'Ondes';
   $('nav').classList.toggle('off', stack.length < 2);
   $('home').classList.toggle('off', k !== 'track');   // trois barres : seulement sur la fiche d'un morceau
-  const st = !!r && !wide() && k !== 'now';
-  stateBtn.innerHTML = st ? ICON.spkHi : '';
+  // en haut à droite (petit écran) : « ● ON AIR » pendant l'écoute, un appui mène à « En lecture »
+  const st = on && !wide() && k !== 'now';
+  if (st !== stateBtn.classList.contains('on')) { stateBtn.innerHTML = st ? ONAIR : ''; stateBtn.classList.toggle('on', st); }
+  stateBtn.classList.toggle('busy', st && (isBusy(s) || s === 'offline'));
   stateBtn.disabled = !st;
   nowViews.forEach(updateNow);
   updateMini();
