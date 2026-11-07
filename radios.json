@@ -6,175 +6,222 @@
       "url": "https://icecast.radiofrance.fr/fip-hifi.aac",
       "country": "France",
       "city": "Paris",
-      "logo": "logos/fip.jpg"
+      "logo": "logos/fip.jpg",
+      "codec": "AAC",
+      "bitrate": 192
     },
     {
       "name": "FIP Jazz",
       "url": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
       "country": "France",
       "city": "Paris",
-      "logo": "logos/fip-jazz.jpg"
+      "logo": "logos/fip-jazz.jpg",
+      "codec": "AAC",
+      "bitrate": 192
     },
     {
       "name": "NTS Radio Channel 1",
       "url": "https://stream-relay-geo.ntslive.net/stream?client=direct",
       "country": "UK",
       "city": "London",
-      "logo": "logos/nts-radio-channel-1.jpg"
+      "logo": "logos/nts-radio-channel-1.jpg",
+      "codec": "MP3",
+      "bitrate": 256
     },
     {
       "name": "NTS Radio Channel 2",
       "url": "https://stream-relay-geo.ntslive.net/stream2?client=direct",
       "country": "UK",
       "city": "London",
-      "logo": "logos/nts-radio-channel-2.jpg"
+      "logo": "logos/nts-radio-channel-2.jpg",
+      "codec": "MP3",
+      "bitrate": 256
     },
     {
       "name": "Radio Meuh",
       "url": "https://radiomeuh.ice.infomaniak.ch/radiomeuh-128.mp3",
       "country": "France",
       "city": "La Clusaz",
-      "logo": "logos/radio-meuh.jpg"
+      "logo": "logos/radio-meuh.jpg",
+      "codec": "MP3",
+      "bitrate": 128
     },
     {
       "name": "Refuge Worldwide",
       "url": "https://streaming.radio.co/s3699c5e49/listen",
       "country": "Germany",
       "city": "Berlin",
-      "logo": "logos/refuge-worldwide.jpg"
+      "logo": "logos/refuge-worldwide.jpg",
+      "codec": "MP3",
+      "bitrate": 192
     },
     {
       "name": "Rinse UK",
       "url": "https://admin.stream.rinse.fm/proxy/rinse_uk/stream",
       "country": "UK",
       "city": "London",
-      "logo": "logos/rinse-uk.jpg"
+      "logo": "logos/rinse-uk.jpg",
+      "codec": "AAC",
+      "bitrate": 128
     },
     {
       "name": "Worldwide FM",
       "url": "https://worldwide-fm.radiocult.fm/stream",
       "country": "UK",
       "city": "London",
-      "logo": "logos/worldwide-fm.jpg"
+      "logo": "logos/worldwide-fm.jpg",
+      "codec": "MP3",
+      "bitrate": 320
     },
     {
       "name": "Kiosk Radio",
       "url": "https://kioskradiobxl.out.airtime.pro/kioskradiobxl_b",
       "country": "Belgium",
       "city": "Brussels",
-      "logo": "logos/kiosk-radio.jpg"
+      "logo": "logos/kiosk-radio.jpg",
+      "codec": "AAC",
+      "bitrate": 192
     },
     {
       "name": "Noods Radio",
       "url": "https://noods-radio.radiocult.fm/stream",
       "country": "UK",
       "city": "Bristol",
-      "logo": "logos/noods-radio.jpg"
+      "logo": "logos/noods-radio.jpg",
+      "codec": "MP3",
+      "bitrate": 192
     },
     {
       "name": "Dublab",
       "url": "https://dublab.out.airtime.pro/dublab_a",
       "country": "USA",
       "city": "Los Angeles",
-      "logo": "logos/dublab.jpg"
+      "logo": "logos/dublab.jpg",
+      "codec": "MP3",
+      "bitrate": 192
     },
     {
       "name": "Soho Radio",
       "url": "https://sohoradiomusic.doughunt.co.uk:8010/320mp3",
       "country": "UK",
       "city": "London",
-      "logo": "logos/soho-radio.jpg"
+      "logo": "logos/soho-radio.jpg",
+      "codec": "MP3",
+      "bitrate": 320
     },
     {
       "name": "Movement Radio",
       "url": "https://movementathens.out.airtime.pro/movementathens_a",
       "country": "Greece",
       "city": "Athens",
-      "logo": "logos/movement-radio.jpg"
+      "logo": "logos/movement-radio.jpg",
+      "codec": "AAC",
+      "bitrate": 192
     },
     {
       "name": "WFMU",
       "url": "https://stream0.wfmu.org/freeform-128k.mp3",
       "country": "USA",
       "city": "New Jersey",
-      "logo": "logos/wfmu.jpg"
+      "logo": "logos/wfmu.jpg",
+      "codec": "MP3",
+      "bitrate": 128
     },
     {
       "name": "Cashmere Radio",
       "url": "https://cashmereradio.out.airtime.pro/cashmereradio_b",
       "country": "Germany",
       "city": "Berlin",
-      "logo": "logos/cashmere-radio.jpg"
+      "logo": "logos/cashmere-radio.jpg",
+      "codec": "MP3",
+      "bitrate": 192
     },
     {
       "name": "Foundation FM",
       "url": "https://streamer.radio.co/s0628bdd53/listen",
       "country": "UK",
       "city": "London",
-      "logo": "logos/foundation-radio.jpg"
+      "logo": "logos/foundation-radio.jpg",
+      "codec": "MP3",
+      "bitrate": 192
     },
     {
       "name": "Radio Nova",
       "url": "https://novazz.ice.infomaniak.ch/novazz-128.mp3",
       "country": "France",
       "city": "Paris",
-      "logo": "logos/radio-nova.jpg"
+      "logo": "logos/radio-nova.jpg",
+      "codec": "MP3",
+      "bitrate": 128
     },
     {
       "name": "Canal B",
       "url": "https://stream.levillage.org/canalb",
       "country": "France",
       "city": "Rennes",
-      "logo": "logos/canal-b.jpg"
+      "logo": "logos/canal-b.jpg",
+      "codec": "MP3"
     },
     {
       "name": "DO!! YOU!!! Radio",
       "url": "https://doyouworld.out.airtime.pro/doyouworld_a",
       "country": "UK",
       "city": "London",
-      "logo": "logos/do-you-radio.jpg"
+      "logo": "logos/do-you-radio.jpg",
+      "codec": "MP3",
+      "bitrate": 128
     },
     {
       "name": "Silence Radio",
       "url": "https://silence-radio-4d71dfe5.radiocult.fm/stream",
       "country": "France",
       "city": "Île de la Réunion",
-      "logo": "logos/silence-radio.jpg"
+      "logo": "logos/silence-radio.jpg",
+      "codec": "MP3",
+      "bitrate": 320
     },
     {
       "name": "Comala Radio",
       "url": "https://listen.radioking.com/radio/38120/stream/74519",
       "country": "France",
       "city": "Lille",
-      "logo": "logos/comala-radio.jpg"
+      "logo": "logos/comala-radio.jpg",
+      "codec": "MP3",
+      "bitrate": 192
     },
-  {
-  "name": "Mad Radio",
-  "url": "https://c2.radioboss.fm:8588/stream",
-  "country": "USA",
-  "city": "New-York",
-  "logo": "logos/mad-radio.jpg"
-},
+    {
+      "name": "Mad Radio",
+      "url": "https://c2.radioboss.fm:8588/stream",
+      "country": "USA",
+      "city": "New-York",
+      "logo": "logos/mad-radio.jpg",
+      "codec": "MP3",
+      "bitrate": 320
+    },
     {
       "name": "Rotation Radio",
       "url": "https://rotation-radio-befbc736.radiocult.fm/stream",
       "country": "Sueden",
       "city": "Stockholm",
-      "logo": "logos/rotation-radio.jpg"
+      "logo": "logos/rotation-radio.jpg",
+      "codec": "MP3"
     },
     {
       "name": "Calotropis Radio",
       "url": "https://radio.calotropis.xyz:8000/radio.mp3",
       "country": "Kenya",
       "city": "Nairobi",
-      "logo": "logos/calo.jpeg"
+      "logo": "logos/calo.jpeg",
+      "codec": "MP3",
+      "bitrate": 128
     },
     {
       "name": "Oroko Radio",
       "url": "https://oroko-radio.radiocult.fm/stream",
       "country": "Ghana",
       "city": "Accra",
-      "logo": "logos/oroko-radio.jpg"
+      "logo": "logos/oroko-radio.jpg",
+      "codec": "MP3"
     }
   ]
 }
