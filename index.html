@@ -742,9 +742,9 @@ function renderHistory() {
   hist.forEach(e => {
     const d = dayLabel(e.t);
     if (d !== day) { day = d; frag.append(el('div', 'day', d)); }
-    // le morceau en grand ; dessous l'heure, la radio, puis l'artiste
-    frag.append(row(e.song || e.title, {
-      thumb: e.logo || '', sub: [hhmm(e.t), e.radio, e.artist].filter(Boolean).join(' · '), chev: true,
+    // « Artiste — Titre », et dessous l'heure et la radio
+    frag.append(row(entryText(e), {
+      thumb: e.logo || '', sub: `${hhmm(e.t)} · ${e.radio}`, chev: true,
       tap: () => push({ kind: 'track', e }),
     }));
   });
