@@ -553,10 +553,16 @@ audio.addEventListener('timeupdate', () => {
 ['waiting', 'stalled'].forEach(ev => audio.addEventListener(ev, () => {
   if (P.want && P.state === 'playing') watch(STALL_TIMEOUT);   // on laisse une chance au tampon
 }));
+/* Moment du dernier geste ou retour en arrière : sur l'app installée, iOS peut mettre le son
+   en pause pendant le geste de retour ; ce n'est pas une vraie pause, on relance aussitôt. */
+let lastNav = 0;
+const navigating = () => Date.now() - lastNav < 2500;
 audio.addEventListener('pause', () => {
   // pause imposée par le système (appel, écouteurs débranchés…) — pas celles de nos rechargements
   if (Date.now() - P.reloadAt < 1500 || !P.want || !audio.getAttribute('src')) return;
+  if (navigating()) { const pr = audio.play(); if (pr) pr.catch(() => reconnect(true)); return; }
   stop();
+  P.sysStopAt = Date.now();
 });
 ['error', 'ended'].forEach(ev => audio.addEventListener(ev, () => {
   if (!P.want || !audio.getAttribute('src') || Date.now() - P.reloadAt <= 300) return;
@@ -636,6 +642,9 @@ function push(s) {
 }
 function goBack() { if (stack.length > 1) history.back(); }
 window.addEventListener('popstate', e => {
+  // si le son vient d'être coupé par le système pendant le geste de retour, on le relance
+  if (!P.want && P.r && P.sysStopAt && Date.now() - P.sysStopAt < 2500) play(P.r);
+  lastNav = Date.now();
   // la profondeur enregistrée dit combien d'écrans garder (un cran, ou tout d'un coup pour le menu de départ)
   const d = e.state && typeof e.state.d === 'number' ? e.state.d : 1;
   if (d === 0) {
@@ -677,14 +686,23 @@ const STANDALONE = navigator.standalone === true || matchMedia('(display-mode: s
 let edge = null;
 document.addEventListener('touchstart', e => {
   const t = e.touches[0];
-  edge = IOS && STANDALONE && stack.length > 1 && t.clientX < 28 ? { x: t.clientX, y: t.clientY } : null;
+  const atEdge = t.clientX < 28 || t.clientX > innerWidth - 28;
+  if (atEdge) lastNav = Date.now();          // un geste de retour commence peut-être
+  edge = IOS && STANDALONE && stack.length > 1 && t.clientX < 28 ? { x: t.clientX, y: t.clientY, t: Date.now() } : null;
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (!edge) return;
-  const t = e.changedTouches[0];
-  if (t.clientX - edge.x > 70 && Math.abs(t.clientY - edge.y) < 60) goBack();
+  const t = e.changedTouches[0], g = edge;
   edge = null;
+  if (t.clientX - g.x > 70 && Math.abs(t.clientY - g.y) < 60) {
+    lastNav = Date.now();
+    // si iOS a déjà fait le retour de lui-même, on n'en ajoute pas un second
+    const seen = popAt;
+    setTimeout(() => { if (popAt === seen && popAt < g.t) goBack(); }, 400);
+  }
 }, { passive: true });
+let popAt = 0;
+window.addEventListener('popstate', () => { popAt = Date.now(); });
 
 /* Appui : la ligne s'inverse comme sur l'écran du lecteur */
 function bindPress(node, onTap) {
