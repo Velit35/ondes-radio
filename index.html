@@ -637,7 +637,13 @@ function push(s) {
 function goBack() { if (stack.length > 1) history.back(); }
 window.addEventListener('popstate', e => {
   // la profondeur enregistrée dit combien d'écrans garder (un cran, ou tout d'un coup pour le menu de départ)
-  const d = Math.max(1, (e.state && e.state.d) || 1);
+  const d = e.state && typeof e.state.d === 'number' ? e.state.d : 1;
+  if (d === 0) {
+    // retour depuis la liste des radios : si une radio joue, on reste dans l'app (sinon on la couperait)
+    if (isOn()) { history.pushState({ d: 1 }, ''); if (stack.length > 1) { stack.length = 1; render(false); } }
+    else history.back();
+    return;
+  }
   if (d < stack.length) { stack.length = d; render(false); }
 });
 function goHome() { if (stack.length > 1) history.go(-(stack.length - 1)); }
@@ -663,11 +669,15 @@ function render(fresh) {
   paint();
 }
 
-/* Glisser depuis le bord gauche = retour (pratique en mode app sur iPhone) */
+/* Glisser depuis le bord gauche = retour.
+   Seulement dans l'app installée sur iPhone, qui n'a pas ce geste : dans Safari ou sur Android,
+   le geste du système fait déjà un retour, et le nôtre en ajoutait un second (qui sortait de l'app). */
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const STANDALONE = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
 let edge = null;
 document.addEventListener('touchstart', e => {
   const t = e.touches[0];
-  edge = stack.length > 1 && t.clientX < 28 ? { x: t.clientX, y: t.clientY } : null;
+  edge = IOS && STANDALONE && stack.length > 1 && t.clientX < 28 ? { x: t.clientX, y: t.clientY } : null;
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (!edge) return;
@@ -782,6 +792,27 @@ function renderHistory() {
   pageBox.replaceChildren(frag);
 }
 
+/* ---------- Ouvrir un service de musique ----------
+   Sur téléphone, on ouvre directement l'app (Spotify, Deezer…) : passer par leur site laissait
+   une page blanche ouverte derrière. Si l'app n'est pas installée, le site s'ouvre à la place.
+   Sur ordinateur : le site, dans un nouvel onglet. */
+const MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function openOut(web, app) {
+  if (!MOBILE || !app) { window.open(web, '_blank', 'noopener'); return; }
+  let left = false;
+  const gone = () => { left = true; };
+  window.addEventListener('blur', gone, { once: true });
+  window.addEventListener('pagehide', gone, { once: true });
+  document.addEventListener('visibilitychange', gone, { once: true });
+  location.href = app;
+  setTimeout(() => {
+    window.removeEventListener('blur', gone);
+    window.removeEventListener('pagehide', gone);
+    document.removeEventListener('visibilitychange', gone);
+    if (!left && !document.hidden) window.open(web, '_blank', 'noopener');
+  }, 2500);
+}
+
 /* ---------- Fiche d'un morceau ---------- */
 function renderTrack(e) {
   const q = encodeURIComponent(e.artist ? `${e.artist} ${e.song}` : (e.song || e.title));
@@ -790,15 +821,15 @@ function renderTrack(e) {
   head.append(el('div', 'song', e.song || e.title));
   if (e.artist) head.append(el('div', 'artist', e.artist));
   head.append(el('div', 'when', `${e.radio} · ${when} à ${hhmm(e.t)}`));
-  const open = url => () => window.open(url, '_blank', 'noopener');
+  const open = (web, app) => () => openOut(web, app);
   const radio = radios.find(r => r.url === e.url);
   const frag = document.createDocumentFragment();
   frag.append(head,
-    row('Chercher sur Spotify', { chev: true, tap: open('https://open.spotify.com/search/' + q) }),
-    row('Chercher sur Apple Music', { chev: true, tap: open('https://music.apple.com/fr/search?term=' + q) }),
-    row('Chercher sur Deezer', { chev: true, tap: open('https://www.deezer.com/fr/search/' + q) }),
+    row('Chercher sur Spotify', { chev: true, tap: open('https://open.spotify.com/search/' + q, 'spotify:search:' + q) }),
+    row('Chercher sur Apple Music', { chev: true, tap: open('https://music.apple.com/fr/search?term=' + q, 'music://music.apple.com/fr/search?term=' + q) }),
+    row('Chercher sur Deezer', { chev: true, tap: open('https://www.deezer.com/fr/search/' + q, 'deezer://www.deezer.com/search/' + q) }),
     row('Chercher sur Bandcamp', { chev: true, tap: open('https://bandcamp.com/search?q=' + q) }),
-    row('Chercher sur YouTube', { chev: true, tap: open('https://www.youtube.com/results?search_query=' + q) }),
+    row('Chercher sur YouTube', { chev: true, tap: open('https://www.youtube.com/results?search_query=' + q, 'youtube://results?search_query=' + q) }),
     row(navigator.share ? 'Partager…' : 'Copier le titre', { tap: () => {
       const text = entryText(e);
       if (navigator.share) navigator.share({ text: `${text} (sur ${e.radio})` }).catch(() => {});
@@ -956,7 +987,9 @@ document.addEventListener('keydown', e => {
 /* Liste à jour quand on revient sur l'app (si tu as modifié radios.json entre-temps) */
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !isOn()) loadRadios(); });
 
-history.replaceState({ d: 1 }, '');
+// garde-fou : une étape « 0 » avant la liste, pour qu'un retour de trop ne coupe pas la radio
+if (history.state && history.state.d >= 1) history.replaceState({ d: 1 }, '');
+else { history.replaceState({ d: 0 }, ''); history.pushState({ d: 1 }, ''); }
 render(true);
 loadRadios();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
